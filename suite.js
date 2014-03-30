@@ -11,7 +11,13 @@ QUnit.begin = function() {
 		.build();
 };
 
+function title() {
+	document.title = QUnit.config.current.testNumber + "." + QUnit.config.current.testName;
+}
+
+module('WebDriver');
 asyncTest('get', function(){
+	title();
 	//page exist
 	driver.get('/tests/input.html');
 	driver.wait(function() {
@@ -33,6 +39,7 @@ asyncTest('get', function(){
 });
 
 asyncTest("findElementByClass", function() {
+	title();
 	driver.get('/tests/input.html');
 	driver.findElement(By.className('title'))
 		.then(function(a) {
@@ -51,6 +58,7 @@ asyncTest("findElementByClass", function() {
 });
 
 asyncTest("findElementByCssSelector", function() {
+	title();
 	driver.get('/tests/input.html');
 	driver.findElement(By.css('.title'))
 		.then(function(a) {
@@ -69,6 +77,7 @@ asyncTest("findElementByCssSelector", function() {
 });
 
 asyncTest("findElementById", function() {
+	title();
 	driver.get('/tests/input.html');
 	driver.findElement(By.id('navi'))
 		.then(function(a) {
@@ -87,6 +96,7 @@ asyncTest("findElementById", function() {
 });
 
 asyncTest("findElementByName", function() {
+	title();
 	driver.get('/tests/input.html');
 	driver.findElement(By.name('address'))
 		.then(function(a) {
@@ -105,6 +115,7 @@ asyncTest("findElementByName", function() {
 });
 
 asyncTest("findElementByLinkText", function() {
+	title();
 	driver.get('/tests/input.html');
 	driver.findElement(By.linkText('list'))
 		.then(function(a) {
@@ -123,6 +134,7 @@ asyncTest("findElementByLinkText", function() {
 });
 
 asyncTest("findElementByPartialLinkText", function() {
+	title();
 	driver.get('/tests/input.html');
 	driver.findElement(By.partialLinkText('lis'))
 		.then(function(a) {
@@ -141,6 +153,7 @@ asyncTest("findElementByPartialLinkText", function() {
 });
 
 asyncTest("findElementByTagName", function() {
+	title();
 	driver.get('/tests/input.html');
 	driver.findElement(By.tagName('select'))
 		.then(function(a) {
@@ -159,6 +172,7 @@ asyncTest("findElementByTagName", function() {
 });
 
 asyncTest("findElementByXpath", function() {
+	title();
 	driver.get('/tests/input.html');
 	driver.findElement(By.xpath('//option'))
 		.then(function(a) {
@@ -176,7 +190,39 @@ asyncTest("findElementByXpath", function() {
 		});
 });
 
+asyncTest("executeScript", function() {
+	title();
+	driver.get('/tests/input.html');
+	driver.executeScript('12 * 34')
+		.then(function(result) {
+			equal(408, result, "12 * 34=" + result);
+		})
+		.thenCatch(function() {
+			ok(false, "can't execute");
+		})
+		.thenFinally(function() {
+			start();
+		});
+});
+
+asyncTest("getPageSource", function() {
+	title();
+	driver.get('/tests/input.html');
+	driver.getPageSource()
+		.then(function(html) {
+			ok(html.match(/^<html/), html);
+		})
+		.thenCatch(function() {
+			ok(false);
+		})
+		.thenFinally(function() {
+			start();
+		});
+});
+
+module("WebElement");
 asyncTest("click", function() {
+	title();
 	//link
 	driver.get('/tests/input.html');
 	driver.findElement(By.css('#navi a')).click()
@@ -264,7 +310,8 @@ asyncTest("click", function() {
 	});
 });
 
-asyncTest("sendkeys", function() {
+asyncTest("sendKeys", function() {
+	title();
 	driver.get('/tests/input.html');
 	driver.findElement(By.name('name')).sendKeys("Mike")
 	.then(function() {
@@ -285,7 +332,8 @@ asyncTest("sendkeys", function() {
 	});
 });
 
-asyncTest("text", function() {
+asyncTest("getText", function() {
+	title();
 	driver.get('/tests/input.html');
 	driver.findElement(By.className('title'))
 		.getText()
@@ -299,3 +347,82 @@ asyncTest("text", function() {
 			start();
 		});
 });
+
+asyncTest("getTagName", function() {
+	title();
+	driver.get('/tests/input.html');
+	driver.findElement(By.className('title'))
+		.getTagName()
+		.then(function(tagName) {
+			equal("h1", tagName, "tagName:" + tagName);
+		})
+		.thenCatch(function() {
+			ok(false, "not found");
+		})
+		.thenFinally(function() {
+			start();
+		});
+});
+
+asyncTest("getCssValue", function() {
+	title();
+	driver.get('/tests/list.html');
+	driver.findElement(By.id('row-template'))
+		.getCssValue('display')
+		.then(function(cssValue) {
+			equal("none", cssValue, "cssValue:" + cssValue);
+		})
+		.thenCatch(function() {
+			ok(false, "not found");
+		})
+		.thenFinally(function() {
+			start();
+		});
+});
+
+asyncTest("getAttribute", function() {
+	title();
+	driver.get('/tests/list.html');
+	driver.findElement(By.id('row1'))
+		.getAttribute('class')
+		.then(function(attrValue) {
+			equal("address odd", attrValue, "attrValue:" + attrValue);
+		})
+		.thenCatch(function() {
+			ok(false, "not found");
+		})
+		.thenFinally(function() {
+			start();
+		});
+});
+
+//asyncTest("getOuterHtml", function() {
+//	driver.get('/tests/input.html');
+//	driver.findElement(By.id('navi'))
+//		.getOuterHtml()
+//		.then(function(html) {
+//			ok(true);
+//		})
+//		.thenCatch(function() {
+//			ok(false, "not found");
+//		})
+//		.thenFinally(function() {
+//			start();
+//		});
+//});
+
+//asyncTest("getInnerHtml", function() {
+//	driver.get('/tests/input.html');
+//	driver.findElement(By.id('navi'))
+//		.getInnerHtml()
+//		.then(function(html) {
+//			ok(true);
+//		})
+//		.thenCatch(function() {
+//			ok(false, "not found");
+//		})
+//		.thenFinally(function() {
+//			start();
+//		});
+//});
+

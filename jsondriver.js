@@ -10,7 +10,6 @@ window.addEventListener("load", function() {
 				if (xhr.status == 200) { // OK
 					var rpc = JSON.parse(xhr.responseText);
 					log(">>" + xhr.responseText);
-try {
 					if (rpc.path.match(/^\/session\/[^\/]+$/)) {
 						doSession(rpc);
 					} else if (rpc.path.match(/^\/session\/[^\/]+\/url$/)) {
@@ -25,12 +24,19 @@ try {
 						doElementValue(rpc);
 					} else if (rpc.path.match(/^\/session\/[^\/]+\/element\/[^\/]+\/text$/)) {
 						doElementText(rpc);
+					} else if (rpc.path.match(/^\/session\/[^\/]+\/element\/[^\/]+\/name$/)) {
+						doElementName(rpc);
+					} else if (rpc.path.match(/^\/session\/[^\/]+\/element\/[^\/]+\/css\/[^\/]+$/)) {
+						doElementCssValue(rpc);
+					} else if (rpc.path.match(/^\/session\/[^\/]+\/element\/[^\/]+\/attribute\/[^\/]+$/)) {
+						doElementAttribute(rpc);
+					} else if (rpc.path.match(/^\/session\/[^\/]+\/execute$/)) {
+						doExecute(rpc);
+					} else if (rpc.path.match(/^\/session\/[^\/]+\/source$/)) {
+						doSource(rpc);
 					} else {
 						doUnknown(rpc);
 					}
-} catch(e) {
-	log(e);
-}
 				} else {
 					log("[E]" + xhr.status);
 				}
@@ -52,6 +58,16 @@ try {
 	
 	function getElementId(rpc) {
 		var result = rpc.path.replace(/^\/session\/([^\/]+)\/element\/([^\/]+).*$/, "$2");
+		return result;
+	}
+	
+	function getCssName(rpc) {
+		var result = rpc.path.replace(/^\/session\/([^\/]+)\/element\/([^\/]+)\/css\/([^\/]+)$/, "$3");
+		return result;
+	}
+
+	function getAttributeName(rpc) {
+		var result = rpc.path.replace(/^\/session\/([^\/]+)\/element\/([^\/]+)\/attribute\/([^\/]+)$/, "$3");
 		return result;
 	}
 	
@@ -160,6 +176,39 @@ try {
 		default:
 			doUnknown(rpc);
 		}
+	}
+	
+	function doExecute(rpc) {
+		var script = rpc.data.script;
+		var args   = rpc.data.args;
+		var evalResult = eval(script);
+		var result = JSON.stringify({
+			"sessionId":getSessionId(rpc),
+			"status":0,
+			"value":evalResult,
+			"state":"success",
+			"class":CLASS_NAME
+		});
+		var xhr = new XMLHttpRequest();
+		xhr.open("POST", BASE_URL + "/wd/hub/target");
+		xhr.setRequestHeader('Content-Type', 'application/json');
+		xhr.send(result);
+		log("<<" + result);
+	}
+	
+	function doSource(rpc) {
+		var result = JSON.stringify({
+			"sessionId":getSessionId(rpc),
+			"status":0,
+			"value":document.documentElement.outerHTML,
+			"state":"success",
+			"class":CLASS_NAME
+		});
+		var xhr = new XMLHttpRequest();
+		xhr.open("POST", BASE_URL + "/wd/hub/target");
+		xhr.setRequestHeader('Content-Type', 'application/json');
+		xhr.send(result);
+		log("<<" + result);
 	}
 	
 	function doElementByClass(rpc) {
@@ -465,6 +514,102 @@ try {
 		xhr.send(result);
 		log("<<" + result);
 		if (element) element.value = rpc.data.value;
+	}
+	
+	function doElementName(rpc) {
+		var result = JSON.stringify({
+			"sessionId":getSessionId(rpc),
+			"status":7,
+			"value":null,
+			"state":"NoSuchElement",
+			"class":CLASS_NAME
+		});
+		var element = founds[getElementId(rpc)];
+		if (element) {
+			result = JSON.stringify({
+				"sessionId":getSessionId(rpc),
+				"status":0,
+				"value":element.nodeName.toLowerCase(),
+				"state":"success",
+				"class":CLASS_NAME
+			});
+		}
+		var xhr = new XMLHttpRequest();
+		xhr.open("POST", BASE_URL + "/wd/hub/target", false);
+		xhr.setRequestHeader('Content-Type', 'application/json');
+		xhr.send(result);
+		log("<<" + result);
+		if (element) element.value = rpc.data.value;
+	}
+	
+	function doElementCssValue(rpc) {
+		var result = JSON.stringify({
+			"sessionId":getSessionId(rpc),
+			"status":7,
+			"value":null,
+			"state":"NoSuchElement",
+			"class":CLASS_NAME
+		});
+		var element = founds[getElementId(rpc)];
+		if (element) {
+			result = JSON.stringify({
+				"sessionId":getSessionId(rpc),
+				"status":0,
+				"value":element.style[getCssName(rpc)],
+				"state":"success",
+				"class":CLASS_NAME
+			});
+		}
+		var xhr = new XMLHttpRequest();
+		xhr.open("POST", BASE_URL + "/wd/hub/target", false);
+		xhr.setRequestHeader('Content-Type', 'application/json');
+		xhr.send(result);
+		log("<<" + result);
+		if (element) element.value = rpc.data.value;
+	}
+	
+	function doElementAttribute(rpc) {
+		var result = JSON.stringify({
+			"sessionId":getSessionId(rpc),
+			"status":7,
+			"value":null,
+			"state":"NoSuchElement",
+			"class":CLASS_NAME
+		});
+		var element = founds[getElementId(rpc)];
+		if (element) {
+			result = JSON.stringify({
+				"sessionId":getSessionId(rpc),
+				"status":0,
+				"value":element.getAttribute(getAttributeName(rpc)),
+				"state":"success",
+				"class":CLASS_NAME
+			});
+		}
+		var xhr = new XMLHttpRequest();
+		xhr.open("POST", BASE_URL + "/wd/hub/target", false);
+		xhr.setRequestHeader('Content-Type', 'application/json');
+		xhr.send(result);
+		log("<<" + result);
+		if (element) element.value = rpc.data.value;
+	}
+	
+	function doElementExecute(rpc) {
+		var script = rpc.data.script;
+		var args   = rpc.data.args;
+		var evalResult = eval(script);
+		var result = JSON.stringify({
+			"sessionId":getSessionId(rpc),
+			"status":0,
+			"value":evalResult,
+			"state":"success",
+			"class":CLASS_NAME
+		});
+		var xhr = new XMLHttpRequest();
+		xhr.open("POST", BASE_URL + "/wd/hub/target");
+		xhr.setRequestHeader('Content-Type', 'application/json');
+		xhr.send(result);
+		log("<<" + result);
 	}
 	
 	function doUnknown(rpc) {

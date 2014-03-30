@@ -1,0 +1,12 @@
+RewriteEngine On
+RewriteBase /wd
+#RewriteRule ^hub/(.*)$ hub.php?path=$1 [L]
+#RewriteRule ^hub/(.*)$ http://localhost:4444/wd/hub/$1 [L]
+RewriteRule ^hub/xdrpc xdrpc.php [L]
+
+<IfModule mod_headers.c>
+    #Header append Access-Control-Allow-Origin http://localhost:4444
+    #Header add Access-Control-Allow-Origin "*"
+    #Header add Access-Control-Allow-Headers "origin, x-requested-with, content-type"
+    #Header add Access-Control-Allow-Methods "PUT, GET, POST, DELETE, OPTIONS"
+</IfModule>
