@@ -9,10 +9,6 @@ window.addEventListener("load", function() {
 			if (xhr.readyState == 4) { // DONE
 				if (xhr.status == 200) { // OK
 					log(">>" + xhr.responseText);
-//					if (xhr.responseText == "TIMEOUT") {
-//						connect();
-//						return;
-//					}
 					var rpc = JSON.parse(xhr.responseText);
 					if (rpc.path.match(/^\/session\/[^\/]+$/)) {
 						doSession(rpc);
@@ -81,10 +77,11 @@ window.addEventListener("load", function() {
 			height = geo.height + "px";
 			background = "yellow";
 			opacity = 0.5;
+			zIndex = 99999999;
 		}
 		setTimeout(function() {
 			cover.parentNode.removeChild(cover);
-		}, 500);
+		}, 1000);
 	}
 	
 	function getSessionId(rpc) {
