@@ -1,7 +1,8 @@
 /*
  * 
  */
-var queue = [];
+var cq = [];
+var tq = [];
 var http = require("http");
 var url  = require("url");
 http.createServer(function (request, response) {
@@ -93,7 +94,7 @@ function doClient(request, response) {
 			json += data;
 		});
 		request.on("end", function(evt) {
-			queue.push(new Queue(json, response));
+			cq.push(new Queue(json, response));
 		});
 		break;
 	default:
@@ -106,9 +107,10 @@ function doTarget(request, response) {
 	switch(request.method) {
 	case 'GET':
 		var interval = setInterval(function() {
-			if (queue.length > 0) {
+			if (cq.length > 0) {
+				var q = cq[0]; //cq.shift();
+				//tq.push(q);
 				clearInterval(interval);
-				queue[0].status = 1;
 				response.writeHead(200, {
 					"Access-Control-Allow-Origin" : "*",
 					"Access-Control-Allow-Headers" : "Content-Type",
@@ -116,13 +118,13 @@ function doTarget(request, response) {
 					"Allow" : "GET, POST, DELETE",
 					"Conetnt-Type" : "application/json"
 				});
-				response.end(queue[0].rpc);
+				response.end(q.rpc);
 			}
 		}, 100);
 		break;
 	case 'POST':
-		if (queue.length > 0) {
-			var q = queue.shift();
+		if (cq.length > 0) {
+			var q = cq.shift(); //tq.shift();
 			var json = "";
 			request.on("data", function(data) {
 				json += data;
@@ -168,7 +170,7 @@ function doTarget(request, response) {
 		break;
 	default:
 		console.log("unknown:" + request.method);
-		queue.shift();
+		cq.shift();
 		response.writeHead(405, {"Content-Type" : "text/plain"});
 		response.end("Method Not Allowed");
 	}

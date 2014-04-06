@@ -20,6 +20,10 @@ asyncTest('get', function(){
 	title();
 	//page exist
 	driver.get('/tests/input.html');
+driver.findElement(By.className('title'))
+	.then(function(e) {
+		console.log(e);
+	});
 	driver.wait(function() {
 		return driver.getTitle().then(function(title) {
 			var expected = 'input';
@@ -314,22 +318,22 @@ asyncTest("sendKeys", function() {
 	title();
 	driver.get('/tests/input.html');
 	driver.findElement(By.name('name')).sendKeys("Mike")
-	.then(function() {
-		ok(true, "sendkeys");
-	})
-	.thenCatch(function() {
-		ok(false, "not found");
-	});
+		.then(function() {
+			ok(true, "sendkeys");
+		})
+		.thenCatch(function() {
+			ok(false, "not found");
+		});
 	driver.findElement(By.name('age')).sendKeys("50")
-	.then(function() {
-		ok(true, "sendkeys");
-	})
-	.thenCatch(function() {
-		ok(false, "not found");
-	})
-	.thenFinally(function() {
-		start();
-	});
+		.then(function() {
+			ok(true, "sendkeys");
+		})
+		.thenCatch(function() {
+			ok(false, "not found");
+		})
+		.thenFinally(function() {
+			start();
+		});
 });
 
 asyncTest("getText", function() {
