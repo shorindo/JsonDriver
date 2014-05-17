@@ -9,37 +9,42 @@ window.addEventListener("load", function() {
 			if (xhr.readyState == 4) { // DONE
 				if (xhr.status == 200) { // OK
 					log(">>" + xhr.responseText);
-					var rpc = JSON.parse(xhr.responseText);
-					if (rpc.path.match(/^\/session\/[^\/]+$/)) {
-						doSession(rpc);
-					} else if (rpc.path.match(/^\/session\/[^\/]+\/url$/)) {
-						doUrl(rpc);
-					} else if (rpc.path.match(/^\/session\/[^\/]+\/title$/)) {
-						doTitle(rpc);
-					} else if (rpc.path.match(/^\/session\/[^\/]+\/element$/)) {
-						doElement(rpc, false);
-					} else if (rpc.path.match(/^\/session\/[^\/]+\/elements$/)) {
-						doElement(rpc, true);
-					} else if (rpc.path.match(/^\/session\/[^\/]+\/element\/[^\/]+\/click$/)) {
-						doElementClick(rpc);
-					} else if (rpc.path.match(/^\/session\/[^\/]+\/element\/[^\/]+\/value$/)) {
-						doElementValue(rpc);
-					} else if (rpc.path.match(/^\/session\/[^\/]+\/element\/[^\/]+\/text$/)) {
-						doElementText(rpc);
-					} else if (rpc.path.match(/^\/session\/[^\/]+\/element\/[^\/]+\/name$/)) {
-						doElementName(rpc);
-					} else if (rpc.path.match(/^\/session\/[^\/]+\/element\/[^\/]+\/css\/[^\/]+$/)) {
-						doElementCssValue(rpc);
-					} else if (rpc.path.match(/^\/session\/[^\/]+\/element\/[^\/]+\/attribute\/[^\/]+$/)) {
-						doElementAttribute(rpc);
-					} else if (rpc.path.match(/^\/session\/[^\/]+\/execute$/)) {
-						doExecute(rpc);
-					} else if (rpc.path.match(/^\/session\/[^\/]+\/source$/)) {
-						doSource(rpc);
-					} else {
-						doUnknown(rpc);
+					try {
+						var rpc = JSON.parse(xhr.responseText);
+						if (rpc.path.match(/^\/session\/[^\/]+$/)) {
+							doSession(rpc);
+						} else if (rpc.path.match(/^\/session\/[^\/]+\/url$/)) {
+							doUrl(rpc);
+						} else if (rpc.path.match(/^\/session\/[^\/]+\/title$/)) {
+							doTitle(rpc);
+						} else if (rpc.path.match(/^\/session\/[^\/]+\/element$/)) {
+							doElement(rpc, false);
+						} else if (rpc.path.match(/^\/session\/[^\/]+\/elements$/)) {
+							doElement(rpc, true);
+						} else if (rpc.path.match(/^\/session\/[^\/]+\/element\/[^\/]+\/click$/)) {
+							doElementClick(rpc);
+						} else if (rpc.path.match(/^\/session\/[^\/]+\/element\/[^\/]+\/value$/)) {
+							doElementValue(rpc);
+						} else if (rpc.path.match(/^\/session\/[^\/]+\/element\/[^\/]+\/text$/)) {
+							doElementText(rpc);
+						} else if (rpc.path.match(/^\/session\/[^\/]+\/element\/[^\/]+\/name$/)) {
+							doElementName(rpc);
+						} else if (rpc.path.match(/^\/session\/[^\/]+\/element\/[^\/]+\/css\/[^\/]+$/)) {
+							doElementCssValue(rpc);
+						} else if (rpc.path.match(/^\/session\/[^\/]+\/element\/[^\/]+\/attribute\/[^\/]+$/)) {
+							doElementAttribute(rpc);
+						} else if (rpc.path.match(/^\/session\/[^\/]+\/execute$/)) {
+							doExecute(rpc);
+						} else if (rpc.path.match(/^\/session\/[^\/]+\/source$/)) {
+							doSource(rpc);
+						} else {
+							doUnknown(rpc);
+						}
+						connect();
+					} catch(e) {
+						log("[E]" + e);
+						setTimeout(connect, 5000);
 					}
-					connect();
 				} else {
 					log("[E]" + xhr.statusText);
 					setTimeout(connect, 5000);
@@ -254,14 +259,14 @@ window.addEventListener("load", function() {
 		};
 		var elements = document.getElementsByClassName(name);
 		if (multiple) {
+			result.status = 0;
+			result.state = "success";
 			for (var i = 0; i < elements.length; i++) {
 				var e = elements[i];
 				var id = new String(founds.length);
 				hilit(e);
 				founds.push(e);
-				result.status = 0;
 				result.value.push({"ELEMENT":id});
-				result.state = "success";
 			}
 		} else if (elements.length > 0) {
 			var e = elements[0];
@@ -290,14 +295,14 @@ window.addEventListener("load", function() {
 		};
 		var elements = document.querySelectorAll(selector);
 		if (multiple) {
+			result.status = 0;
+			result.state = "success";
 			for (var i = 0; i < elements.length; i++) {
 				var e = elements[i];
 				var id = new String(founds.length);
 				hilit(e);
 				founds.push(e);
-				result.status = 0;
 				result.value.push({"ELEMENT":id});
-				result.state = "success";
 			}
 		} else if (elements.length > 0) {
 			var e = elements[0];
@@ -320,17 +325,26 @@ window.addEventListener("load", function() {
 		var result = {
 			"sessionId":getSessionId(rpc),
 			"status":7,
-			"value":null,
+			"value":[],
 			"state":"NoSuchElement",
 			"class":CLASS_NAME
 		};
 		var element = document.getElementById(id);
-		if (element) {
+		if (multiple) {
+			result.status = 0;
+			result.state = "success";
+			if (element) {
+				var id = new String(founds.length);
+				hilit(element);
+				founds.push(element);
+				result.value.push({"ELEMENT":element});
+			}
+		} else if (element) {
 			var id = new String(founds.length);
 			hilit(element);
 			founds.push(element);
 			result.status = 0;
-			result.value = multiple ? [{"ELEMENT":id}] : {"ELEMENT":id};
+			result.value = {"ELEMENT":id};
 			result.state = "success";
 		}
 		var xhr = new XMLHttpRequest();
@@ -351,14 +365,14 @@ window.addEventListener("load", function() {
 		};
 		var elements = document.getElementsByName(name);
 		if (multiple) {
+			result.status = 0;
+			result.state = "success";
 			for (var i = 0; i < elements.length; i++) {
 				var e = elements[i];
 				var id = new String(founds.length);
 				hilit(e);
 				founds.push(e);
-				result.status = 0;
 				result.value.push({"ELEMENT":id});
-				result.state = "success";
 			}
 		} else if (elements.length > 0) {
 			var element = elements[0];
@@ -373,7 +387,7 @@ window.addEventListener("load", function() {
 		xhr.open("POST", BASE_URL + "/wd/hub/target");
 		xhr.setRequestHeader('Content-Type', 'application/json');
 		xhr.send(JSON.stringify(result));
-		log("<<" + result);
+		log("<<" + JSON.stringify(result));
 	}
 	
 	function doElementByLinkText(rpc, multiple) {
@@ -387,14 +401,14 @@ window.addEventListener("load", function() {
 		};
 		var snapshot = document.evaluate("//a[text()='" + text + "']", document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
 		if (multiple) {
+			result.status = 0;
+			result.state = "success";
 			for (var i = 0; i < snapshot.snapshotLength; i++) {
 				var e = snapshot.snapshotItem(i);
 				var id = new String(founds.length);
 				hilit(e);
 				founds.push(e);
-				result.status = 0;
 				result.value.push({"ELEMENT":id});
-				result.state = "success";
 			} 
 		} else if (snapshot.snapshotLength > 0) {
 			var e = snapshot.snapshotItem(0);
@@ -423,14 +437,14 @@ window.addEventListener("load", function() {
 		};
 		var snapshot = document.evaluate("//a[contains(text(),'" + text + "')]", document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
 		if (multiple) {
+			result.status = 0;
+			result.state = "success";
 			for (var i = 0; i < snapshot.snapshotLength; i++) {
 				var e = snapshot.snapshotItem(i);
 				var id = new String(founds.length);
 				hilit(e);
 				founds.push(e);
-				result.status = 0;
 				result.value.push({"ELEMENT":id});
-				result.state = "success";
 			}
 		} else if (snapshot.snapshotLength > 0) {
 			var e = snapshot.snapshotItem(0);
@@ -459,14 +473,14 @@ window.addEventListener("load", function() {
 		};
 		var elements = document.getElementsByTagName(tagName);
 		if (multiple) {
+			result.status = 0;
+			result.state = "success";
 			for (var i = 0; i < elements.length; i++) {
 				var e = elements[i];
 				var id = new String(founds.length);
 				hilit(e);
 				founds.push(e);
-				result.status = 0;
 				result.value.push({"ELEMENT":id});
-				result.state = "success";
 			}
 		} else if (elements.length > 0) {
 			var e = elements[0];
@@ -495,14 +509,14 @@ window.addEventListener("load", function() {
 		};
 		var snapshot = document.evaluate(xpath, document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
 		if (multiple) {
+			result.status = 0;
+			result.state = "success";
 			for (var i = 0; i < snapshot.snapshotLength; i++) {
 				var e = snapshot.snapshotItem(i);
 				var id = new String(founds.length);
 				hilit(e);
 				founds.push(e);
-				result.status = 0;
 				result.value.push({"ELEMENT":id});
-				result.state = "success";
 			}
 		} else if (snapshot.snapshotLength > 0) {
 			var e = snapshot.snapshotItem(0);

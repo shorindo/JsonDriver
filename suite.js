@@ -20,10 +20,11 @@ asyncTest('get', function(){
 	title();
 	//page exist
 	driver.get('/tests/input.html');
-driver.findElement(By.className('title'))
-	.then(function(e) {
-		console.log(e);
-	});
+	driver.findElement(By.className('title'))
+		.then(function(e) {
+			//console.log(e);
+			ok(true, "title");
+		});
 	driver.wait(function() {
 		return driver.getTitle().then(function(title) {
 			var expected = 'input';
@@ -61,6 +62,23 @@ asyncTest("findElementByClass", function() {
 		});
 });
 
+asyncTest("findElementsByClass", function() {
+	title();
+	driver.get('/tests/input.html');
+	driver.findElements(By.className('title'))
+		.then(function(elements) {
+			equal(elements.length, 1, 'title found');
+		});
+	driver.findElements(By.className('titlex'))
+		.then(function(elements) {
+//console.log(elements.length);
+			equal(elements.length, 0, 'titlex not found')
+		})
+		.thenFinally(function() {
+			start();
+		});
+});
+
 asyncTest("findElementByCssSelector", function() {
 	title();
 	driver.get('/tests/input.html');
@@ -74,6 +92,25 @@ asyncTest("findElementByCssSelector", function() {
 		})
 		.thenCatch(function() {
 			ok(true, "not found");
+		})
+		.thenFinally(function() {
+			start();
+		});
+});
+
+asyncTest("findElementsByCssSelector", function() {
+	title();
+	driver.get('/tests/input.html');
+	driver.findElements(By.css('.title'))
+		.then(function(elements) {
+			equal(elements.length, 1, "found");
+		});
+	driver.findElements(By.css('.titlex'))
+		.then(function(elements) {
+			equal(elements.length, 0, "found");
+		})
+		.thenCatch(function(e) {
+			ok(false, "error:" + e);
 		})
 		.thenFinally(function() {
 			start();
@@ -99,6 +136,25 @@ asyncTest("findElementById", function() {
 		});
 });
 
+asyncTest("findElementsById", function() {
+	title();
+	driver.get('/tests/input.html');
+	driver.findElements(By.id('navi'))
+		.then(function(elements) {
+			equal(elements.length, 1, "found");
+		});
+	driver.findElements(By.id('navix'))
+		.then(function(elements) {
+			equal(elements.length, 0, "found");
+		})
+		.thenCatch(function(e) {
+			ok(false, "error:" + e);
+		})
+		.thenFinally(function() {
+			start();
+		});
+});
+
 asyncTest("findElementByName", function() {
 	title();
 	driver.get('/tests/input.html');
@@ -112,6 +168,25 @@ asyncTest("findElementByName", function() {
 		})
 		.thenCatch(function() {
 			ok(true, "not found");
+		})
+		.thenFinally(function() {
+			start();
+		});
+});
+
+asyncTest("findElementsByName", function() {
+	title();
+	driver.get('/tests/input.html');
+	driver.findElements(By.name('address'))
+		.then(function(elements) {
+			equal(elements.length, 1, "found");
+		});
+	driver.findElements(By.name('addressx'))
+		.then(function(elements) {
+			equal(elements.length, 0, "not found");
+		})
+		.thenCatch(function(e) {
+			ok(false, "error:" + e);
 		})
 		.thenFinally(function() {
 			start();
@@ -137,6 +212,25 @@ asyncTest("findElementByLinkText", function() {
 		});
 });
 
+asyncTest("findElementsByLinkText", function() {
+	title();
+	driver.get('/tests/input.html');
+	driver.findElements(By.linkText('list'))
+		.then(function(elements) {
+			equal(elements.length, 1, "found");
+		});
+	driver.findElements(By.linkText('listx'))
+		.then(function(elements) {
+			equal(elements.length, 0, "not found");
+		})
+		.thenCatch(function(e) {
+			ok(false, "error:" + e);
+		})
+		.thenFinally(function() {
+			start();
+		});
+});
+
 asyncTest("findElementByPartialLinkText", function() {
 	title();
 	driver.get('/tests/input.html');
@@ -150,6 +244,25 @@ asyncTest("findElementByPartialLinkText", function() {
 		})
 		.thenCatch(function() {
 			ok(true, "not found");
+		})
+		.thenFinally(function() {
+			start();
+		});
+});
+
+asyncTest("findElementsByPartialLinkText", function() {
+	title();
+	driver.get('/tests/input.html');
+	driver.findElements(By.partialLinkText('lis'))
+		.then(function(elements) {
+			equal(elements.length, 1, "found");
+		});
+	driver.findElements(By.partialLinkText('listx'))
+		.then(function(elements) {
+			equal(elements.length, 0, "found");
+		})
+		.thenCatch(function(e) {
+			ok(false, "error:" + e);
 		})
 		.thenFinally(function() {
 			start();
@@ -175,6 +288,25 @@ asyncTest("findElementByTagName", function() {
 		});
 });
 
+asyncTest("findElementsByTagName", function() {
+	title();
+	driver.get('/tests/input.html');
+	driver.findElements(By.tagName('select'))
+		.then(function(elements) {
+			equal(elements.length, 1, "found");
+		});
+	driver.findElements(By.tagName('selectx'))
+		.then(function(elements) {
+			equal(elements.length, 0, "not found");
+		})
+		.thenCatch(function(e) {
+			ok(false, "error:" + e);
+		})
+		.thenFinally(function() {
+			start();
+		});
+});
+
 asyncTest("findElementByXpath", function() {
 	title();
 	driver.get('/tests/input.html');
@@ -188,6 +320,25 @@ asyncTest("findElementByXpath", function() {
 		})
 		.thenCatch(function() {
 			ok(true, "not found");
+		})
+		.thenFinally(function() {
+			start();
+		});
+});
+
+asyncTest("findElementsByXpath", function() {
+	title();
+	driver.get('/tests/input.html');
+	driver.findElements(By.xpath('//option'))
+		.then(function(elements) {
+			equal(elements.length, 11, "found");
+		});
+	driver.findElements(By.xpath('//table'))
+		.then(function(eleemnts) {
+			equal(eleemnts.length, 0, "not found");
+		})
+		.thenCatch(function(e) {
+			ok(false, "error:" + e);
 		})
 		.thenFinally(function() {
 			start();
