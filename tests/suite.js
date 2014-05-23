@@ -71,7 +71,6 @@ asyncTest("findElementsByClass", function() {
 		});
 	driver.findElements(By.className('titlex'))
 		.then(function(elements) {
-//console.log(elements.length);
 			equal(elements.length, 0, 'titlex not found')
 		})
 		.thenFinally(function() {
@@ -329,7 +328,7 @@ asyncTest("findElementByXpath", function() {
 asyncTest("findElementsByXpath", function() {
 	title();
 	driver.get('/tests/input.html');
-	driver.findElements(By.xpath('//option'))
+	driver.findElements(By.xpath("//form[@name='sample']//option"))
 		.then(function(elements) {
 			equal(elements.length, 11, "found");
 		});
@@ -551,6 +550,27 @@ asyncTest("getAttribute", function() {
 		});
 });
 
+asyncTest("element", function() {
+	title();
+	driver.get('/tests/input.html');
+	driver.findElement(By.id('form1'))
+		.then(function(e) {
+			e.findElement(By.name("name"))
+				.then(function(e) {
+					ok(true, JSON.stringify(e));
+				})
+				.thenCatch(function() {
+					ok(false, "not found");
+				});
+		})
+		.thenCatch(function() {
+			ok(false, "not found");
+		})
+		.thenFinally(function() {
+			start();
+		});
+})
+
 //asyncTest("getOuterHtml", function() {
 //	driver.get('/tests/input.html');
 //	driver.findElement(By.id('navi'))
@@ -580,4 +600,3 @@ asyncTest("getAttribute", function() {
 //			start();
 //		});
 //});
-

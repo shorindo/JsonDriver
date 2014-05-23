@@ -21,22 +21,24 @@ http.createServer(function (request, response) {
 		doResource(request, response);
 		break;
 	default:
-		doNotFound(request, response);
+		doResource(request, response);
+		//doNotFound(request, response);
 	}
 }).listen(4444);
 
 //test target server
-http.createServer(function (request, response) {
-	var reqline = request.method + " " + request.url;
-	console.log("test:" + reqline + " from [" + request.client.remoteAddress + "]");
-	doResource(request, response);
-}).listen(8888);
+//http.createServer(function (request, response) {
+//	var reqline = request.method + " " + request.url;
+//	console.log("test:" + reqline + " from [" + request.client.remoteAddress + "]");
+//	doResource(request, response);
+//}).listen(8888);
 
 function doResource(request, response) {
 	var fs = require('fs');
 	try {
 		var url  = require('url').parse(request.url);
 		var path = require('path');
+console.log(path);
 		var fullpath = url.pathname.match(/^.*\/$/) ? url.pathname + "index.html" : url.pathname;
 		var realpath = __dirname + path.normalize(fullpath);
 		var text = fs.readFileSync(realpath, 'utf-8');

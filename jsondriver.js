@@ -33,6 +33,8 @@ window.addEventListener("load", function() {
 							doElementCssValue(rpc);
 						} else if (rpc.path.match(/^\/session\/[^\/]+\/element\/[^\/]+\/attribute\/[^\/]+$/)) {
 							doElementAttribute(rpc);
+						} else if (rpc.path.match(/^\/session\/[^\/]+\/element\/\d+\/element$/)) {
+							doElementElement(rpc);
 						} else if (rpc.path.match(/^\/session\/[^\/]+\/execute$/)) {
 							doExecute(rpc);
 						} else if (rpc.path.match(/^\/session\/[^\/]+\/source$/)) {
@@ -94,7 +96,8 @@ window.addEventListener("load", function() {
 	}
 	
 	function getElementId(rpc) {
-		var result = rpc.path.replace(/^\/session\/([^\/]+)\/element\/([^\/]+).*$/, "$2");
+		//console.log("getElementId(" + rpc.path + ")");
+		var result = rpc.path.replace(/^\/session\/([^\/]+)\/element\/(\d+)(\/.*)$/, "$2");
 		return result;
 	}
 	
@@ -321,6 +324,7 @@ window.addEventListener("load", function() {
 	}
 	
 	function doElementById(rpc, multiple) {
+		console.log("doElementById(" + JSON.stringify(rpc) + ")");
 		var id = rpc.data.value;
 		var result = {
 			"sessionId":getSessionId(rpc),
@@ -351,7 +355,7 @@ window.addEventListener("load", function() {
 		xhr.open("POST", BASE_URL + "/wd/hub/target");
 		xhr.setRequestHeader('Content-Type', 'application/json');
 		xhr.send(JSON.stringify(result));
-		log("<<" + result);
+		log("<<" + JSON.stringify(result));
 	}
 	
 	function doElementByName(rpc, multiple) {
@@ -703,6 +707,32 @@ window.addEventListener("load", function() {
 		});
 		var xhr = new XMLHttpRequest();
 		xhr.open("POST", BASE_URL + "/wd/hub/target");
+		xhr.setRequestHeader('Content-Type', 'application/json');
+		xhr.send(result);
+		log("<<" + result);
+	}
+	
+	function doElementElement(rpc) {
+		console.log("doElementElement()");
+		var result = JSON.stringify({
+			"sessionId":getSessionId(rpc),
+			"status":7,
+			"value":null,
+			"state":"NoSuchElement",
+			"class":CLASS_NAME
+		});
+		var element = founds[getElementId(rpc)];
+		if (element) {
+			result = JSON.stringify({
+				"sessionId":getSessionId(rpc),
+				"status":0,
+				"value":"12345",
+				"state":"success",
+				"class":CLASS_NAME
+			});
+		}
+		var xhr = new XMLHttpRequest();
+		xhr.open("POST", BASE_URL + "/wd/hub/target", false);
 		xhr.setRequestHeader('Content-Type', 'application/json');
 		xhr.send(result);
 		log("<<" + result);

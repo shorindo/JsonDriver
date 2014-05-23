@@ -3,13 +3,20 @@
   <head>
     <title>input</title>
     <script src="http://localhost:4444/jsondriver.js"></script>
+    <style type="text/css">
+    #sub {
+        border: 1px solid gray;
+        padding : 10px;
+        margin-top: 20px;
+    }
+    </style>
   </head>
   <body>
     <div id="navi">
       <a href="list.html">list</a>
     </div>
     <h1 class="title">Input address</h1>
-    <form name="sample" action="list.html">
+    <form id="form1" name="sample" action="list.html">
       Name : <input type="text" name="name"><br>
       Address : <input type="text" name="address"><br>
       Phone : <input type="text" name="phone"><br>
