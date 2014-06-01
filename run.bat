@@ -1,2 +1,2 @@
-ECHO Run jsondriver-server
-node jsondriver-server.js
+ECHO Run jsondserver
+node jsonserver.js

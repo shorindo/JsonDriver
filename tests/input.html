@@ -16,18 +16,18 @@
       <a href="list.html">list</a>
     </div>
     <h1 class="title">Input address</h1>
-    <form id="form1" name="sample" action="list.html">
+    <form id="form1" name="sample" action="list.html" method="POST">
       Name : <input type="text" name="name"><br>
       Address : <input type="text" name="address"><br>
       Phone : <input type="text" name="phone"><br>
-      Age : <select name="age">
+      Age : <select name="age" id="age">
         <option value="">please select</option>
         <option value="0">-10</option>
         <option value="10">10-20</option>
         <option value="20">20-30</option>
         <option value="30">30-40</option>
         <option value="40">40-50</option>
-        <option value="50">50-60</option>
+        <option value="50" selected>50-60</option>
         <option value="60">60-70</option>
         <option value="70">70-80</option>
         <option value="80">80-90</option>
@@ -36,6 +36,7 @@
       Sex :
         <input type="radio" name="sex" value="male"> mail
         <input type="radio" name="sex" value="femail"> femail<br>
+      <input type="file" value="添付ファイル"><br>
       <input type="submit" name="ok">
       <input type="reset" name="cancel">
     </form>

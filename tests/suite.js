@@ -5,9 +5,8 @@ QUnit.config.reorder = false;
 QUnit.begin = function() {
 	driver = new webdriver
 		.Builder()
-		.usingSession("1234")
-		//.withCapabilities(webdriver.Capabilities.firefox())
 		.usingServer('http://localhost:4444/wd/hub')
+		.usingSession("0")
 		.build();
 };
 
@@ -15,7 +14,29 @@ function title() {
 	document.title = QUnit.config.current.testNumber + "." + QUnit.config.current.testName;
 }
 
+asyncTest('CLICK [START] TO START', function() {
+	ok(true);
+});
+
+/**
+ * actions, call, close, controlFlow, executeAsyncScript, executeScript,
+ * findElement, findElements, get, getAllWindowHandles, getCapabilities,
+ * getCurrentUrl, getPageSource, getSession, getTitle, getWindowHandle,
+ * isElementPresent, manage, navigate, quit, schedule, sleep, switchTo,
+ * takeScreenshot, wait
+ */
 module('WebDriver');
+asyncTest('getCurrentUrl', function() {
+	driver.getCurrentUrl()
+		.then(function(url) {
+			path = url.replace(/^https?:\/\/[^\/]+(\/.*)$/, "$1");
+			equal(path, "/tests/input.html", "URL:" + url);
+		})
+		.thenFinally(function() {
+			start();
+		});
+});
+
 asyncTest('get', function(){
 	title();
 	//page exist
@@ -319,6 +340,13 @@ asyncTest("findElementByXpath", function() {
 		})
 		.thenCatch(function() {
 			ok(true, "not found");
+		});
+	driver.findElement(By.xpath('foo['))
+		.then(function() {
+			ok(false, "can't catch error");
+		})
+		.thenCatch(function(e) {
+			ok(true, "catch error:" + e);
 		})
 		.thenFinally(function() {
 			start();
@@ -338,6 +366,13 @@ asyncTest("findElementsByXpath", function() {
 		})
 		.thenCatch(function(e) {
 			ok(false, "error:" + e);
+		});
+	driver.findElement(By.xpath('foo['))
+		.then(function() {
+			ok(false, "can't catch error");
+		})
+		.thenCatch(function(e) {
+			ok(true, "catch error:" + e);
 		})
 		.thenFinally(function() {
 			start();
@@ -347,12 +382,21 @@ asyncTest("findElementsByXpath", function() {
 asyncTest("executeScript", function() {
 	title();
 	driver.get('/tests/input.html');
+	//success
 	driver.executeScript('12 * 34')
 		.then(function(result) {
 			equal(408, result, "12 * 34=" + result);
 		})
 		.thenCatch(function() {
 			ok(false, "can't execute");
+		});
+	//failure
+	driver.executeScript('hogehoge')
+		.then(function(result) {
+			ok(false, "no error");
+		})
+		.thenCatch(function(error) {
+			ok(true, "error:" + error);
 		})
 		.thenFinally(function() {
 			start();
@@ -374,16 +418,22 @@ asyncTest("getPageSource", function() {
 		});
 });
 
+/**
+ * cancel, clear, click, findElement, findElements, getAttribute, getCssValue,
+ * getDriver, getInnerHtml, getLocation, getOuterHtml, getSize, getTagName,
+ * getText, isDisplayed, isElementPresent, isEnabled, isPending, isSelected,
+ * sendKeys, submit, then, thenCatch, thenFinally
+ */
 module("WebElement");
 asyncTest("click", function() {
 	title();
 	//link
 	driver.get('/tests/input.html');
-	driver.findElement(By.css('#navi a')).click()
+	driver.findElement(By.css('#navi a')).click();
 	driver.wait(function() {
 		return driver.getTitle().then(function(title) {
 			var expected = 'list';
-			var result = title === expected;
+			var result = title == expected;
 			if (result) {
 				equal(expected, title, expected);
 			}
@@ -410,7 +460,7 @@ asyncTest("click", function() {
 	.thenCatch(function() {
 		ok(false, "not found");
 	});
-	
+
 	//radio
 	driver.get('/tests/input.html');
 	var radio = driver.findElement(By.xpath("//input[@name='sex' and @value='male']")).click()
@@ -550,7 +600,25 @@ asyncTest("getAttribute", function() {
 		});
 });
 
-asyncTest("element", function() {
+/*
+asyncTest("getValue", function() {
+	title();
+	driver.get('/tests/input.html');
+	driver.findElement(By.id('age'))
+		.getValue()
+		.then(function(value) {
+			equal("50-60", value, "value:" + value);
+		})
+		.thenCatch(function() {
+			ok(false, "not found");
+		})
+		.thenFinally(function() {
+			start();
+		});
+});
+*/
+
+asyncTest("elementByName", function() {
 	title();
 	driver.get('/tests/input.html');
 	driver.findElement(By.id('form1'))
@@ -571,32 +639,375 @@ asyncTest("element", function() {
 		});
 })
 
-//asyncTest("getOuterHtml", function() {
-//	driver.get('/tests/input.html');
-//	driver.findElement(By.id('navi'))
-//		.getOuterHtml()
-//		.then(function(html) {
-//			ok(true);
-//		})
-//		.thenCatch(function() {
-//			ok(false, "not found");
-//		})
-//		.thenFinally(function() {
-//			start();
-//		});
-//});
+asyncTest("elementsByName", function() {
+	title();
+	driver.get('/tests/input.html');
+	driver.findElement(By.id('form1'))
+		.then(function(e) {
+			e.findElements(By.name("name"))
+				.then(function(e) {
+					ok(true, JSON.stringify(e));
+				})
+				.thenCatch(function() {
+					ok(false, "not found");
+				});
+		})
+		.thenCatch(function() {
+			ok(false, "not found");
+		})
+		.thenFinally(function() {
+			start();
+		});
+})
 
-//asyncTest("getInnerHtml", function() {
-//	driver.get('/tests/input.html');
-//	driver.findElement(By.id('navi'))
-//		.getInnerHtml()
-//		.then(function(html) {
-//			ok(true);
-//		})
-//		.thenCatch(function() {
-//			ok(false, "not found");
-//		})
-//		.thenFinally(function() {
-//			start();
-//		});
-//});
+/*
+asyncTest("getOuterHtml", function() {
+	driver.get('/tests/input.html');
+	driver.findElement(By.id('navi'))
+		.getOuterHtml()
+		.then(function(html) {
+			ok(true);
+		})
+		.thenCatch(function() {
+			ok(false, "not found");
+		})
+		.thenFinally(function() {
+			start();
+		});
+});
+
+asyncTest("getInnerHtml", function() {
+	driver.get('/tests/input.html');
+	driver.findElement(By.id('navi'))
+		.getInnerHtml()
+		.then(function(html) {
+			ok(true);
+		})
+		.thenCatch(function() {
+			ok(false, "not found");
+		})
+		.thenFinally(function() {
+			start();
+		});
+});
+*/
+
+module("WebDriver.navigate()");
+asyncTest("navigate()", function() {
+	var result = driver.navigate();
+	equal(typeof(result['back']), 'function');
+	equal(typeof(result['forward']), 'function');
+	equal(typeof(result['refresh']), 'function');
+	equal(typeof(result['to']), 'function');
+	start();
+});
+
+asyncTest('back()', function(){
+	driver.get("input.html");
+	driver.wait(function() {
+		return driver.getTitle().then(function(title) {
+				return title == 'input';
+			});
+	}, 5000);
+	driver.get("list.html");
+	driver.wait(function() {
+		return driver.getTitle().then(function(title) {
+				return title == 'list';
+			});
+	}, 5000);
+	
+	driver.navigate().back()
+		.then(function(e) {
+			driver.getTitle()
+				.then(function(title) {
+					equal(title, "input");
+				});
+		})
+		.thenCatch(function(e) {
+			ok(false, "ERROR:" + e);
+		})
+		.thenFinally(function() {
+			start();
+		});
+});
+
+asyncTest('forward()', function(){
+	driver.get("input.html");
+	driver.wait(function() {
+		return driver.getTitle().then(function(title) {
+				return title == 'input';
+			});
+	}, 5000);
+	driver.get("list.html");
+	driver.wait(function() {
+		return driver.getTitle().then(function(title) {
+				return title == 'list';
+			});
+	}, 5000);
+	driver.executeScript("history.back()");
+
+	driver.navigate().forward()
+		.then(function(e) {
+			driver.getTitle()
+				.then(function(title) {
+					equal(title, "list");
+				});
+		})
+		.thenCatch(function(e) {
+			ok(false, "ERROR:" + e);
+		})
+		.thenFinally(function() {
+			start();
+		});
+});
+
+asyncTest('refresh()', function(){
+	driver.get("input.html");
+	driver.wait(function() {
+		return driver.getTitle().then(function(title) {
+				return title == 'input';
+			});
+	}, 5000);
+	driver.executeScript("document.body.innerHTML='';");
+	
+	driver.navigate().refresh()
+		.thenCatch(function(e) {
+			ok(false, "ERROR:" + e);
+		});
+	driver.findElements(By.css('form'))
+		.then(function(elements) {
+			ok(elements.length > 0, "refreshed.");
+		})
+		.thenCatch(function(e) {
+			ok(false, "ERROR:" + e);
+		})
+		.thenFinally(function() {
+			start();
+		});
+});
+
+asyncTest('to()', function(){
+	driver.navigate()
+	.to("list.html")
+	.then(function(e) {
+		ok(true);
+	})
+	.thenCatch(function(e) {
+		ok(false, "ERROR:" + e);
+	});
+	driver.wait(function() {
+		return driver.getTitle().then(function(title) {
+				return title == 'list';
+			});
+	}, 5000)
+	.thenCatch(function() {
+		ok(false, "TIMEOUT");
+	})
+	.thenFinally(function() {
+		start();
+	});
+});
+
+module("WebDriver.manage()");
+asyncTest('addCookie()', function(){
+	var cookie = (new Date).getTime();
+	driver.get("input.html");
+	driver.manage()
+		.addCookie("foo", cookie)
+		.thenCatch(function(e) {
+			ok(false, "ERROR:" + e);
+		})
+	driver.executeScript("document.cookie")
+		.then(function(result) {
+			ok(result.indexOf("foo=" + cookie) >= 0, "cookie[foo]=" + result);
+		})
+		.thenCatch(function(e) {
+			ok(false, "ERROR:" + e);
+		})
+		.thenFinally(function() {
+			start();
+		});
+});
+
+asyncTest('deleteAllCookies()', function(){
+	var cookie = (new Date).getTime();
+	driver.get("input.html");
+	driver.executeScript("document.cookie='foo=bar'")
+	driver.executeScript("document.cookie='bar=baz'")
+	driver.executeScript("document.cookie='baz=foo'")
+	driver.manage()
+		.deleteAllCookies()
+		.thenCatch(function(e) {
+			ok(false, "ERROR:" + e);
+		})
+	driver.executeScript("document.cookie")
+		.then(function(result) {
+			equal(result, "", "cookie:" + result);
+		})
+		.thenCatch(function(e) {
+			ok(false, "ERROR:" + e);
+		})
+		.thenFinally(function() {
+			start();
+		});
+});
+asyncTest('deleteCookie()', function(){
+	var cookie = (new Date).getTime();
+	driver.get("input.html");
+	driver.executeScript("document.cookie='foo=bar'")
+	driver.executeScript("document.cookie='bar=baz'")
+	driver.executeScript("document.cookie='baz=foo'")
+	driver.executeScript("document.cookie")
+		.then(function(result) {
+			ok(result.indexOf("foo=") >= 0, "cookie:" + result);
+			ok(result.indexOf("bar=") >= 0, "cookie:" + result);
+			ok(result.indexOf("baz=") >= 0, "cookie:" + result);
+		});
+	driver.manage()
+		.deleteCookie("bar")
+		.thenCatch(function(e) {
+			ok(false, "ERROR:" + e);
+		})
+	driver.executeScript("document.cookie")
+		.then(function(result) {
+			ok(result.indexOf("foo=") >= 0, "cookie:" + result);
+			ok(result.indexOf("bar=") < 0,  "cookie:" + result);
+			ok(result.indexOf("baz=") >= 0, "cookie:" + result);
+		})
+		.thenCatch(function(e) {
+			ok(false, "ERROR:" + e);
+		})
+		.thenFinally(function() {
+			start();
+		});
+});
+
+asyncTest('getCookie()', function(){
+	var cookie = (new Date).getTime();
+	driver.get("input.html");
+	driver.executeScript("document.cookie='foo=bar'")
+	driver.executeScript("document.cookie='bar=baz'")
+	driver.executeScript("document.cookie")
+		.then(function(result) {
+			ok(result.indexOf("foo=") >= 0, "cookie:" + result);
+			ok(result.indexOf("bar=") >= 0, "cookie:" + result);
+		});
+	driver.manage()
+	.getCookie("foo")
+	.then(function(result) {
+		equal(result.name, "foo");
+		equal(result.value, "bar");
+	})
+	.thenCatch(function(e) {
+		ok(false, "ERROR:" + e);
+	})
+	driver.manage()
+		.getCookie("bar")
+		.then(function(result) {
+			equal(result.name, "bar");
+			equal(result.value, "baz");
+		})
+		.thenCatch(function(e) {
+			ok(false, "ERROR:" + e);
+		})
+		.thenFinally(function() {
+			start();
+		});
+});
+
+asyncTest('getCookies()', function(){
+	var cookie = (new Date).getTime();
+	driver.get("input.html");
+	driver.executeScript("document.cookie='foo=bar'")
+	driver.executeScript("document.cookie='bar=baz'")
+	driver.executeScript("document.cookie")
+		.then(function(result) {
+			ok(result.indexOf("foo=") >= 0, "cookie:" + result);
+			ok(result.indexOf("bar=") >= 0, "cookie:" + result);
+		});
+	driver.manage()
+		.getCookies()
+		.then(function(result) {
+			ok(result.length > 0, "cookie.length=" + result.length);
+			for (var i = 0; i < result.length; i++) {
+				switch(result[i].name) {
+				case 'foo':
+					equal(result[i].value, 'bar');
+					break;
+				case 'bar':
+					equal(result[i].value, 'baz');
+					break;
+				}
+			}
+		})
+		.thenCatch(function(e) {
+			ok(false, "ERROR:" + e);
+		})
+		.thenFinally(function() {
+			start();
+		});
+});
+
+asyncTest('logs()', function(){
+	driver.sleep(0).then(function() { ok(false, "not implemented"); start(); });
+});
+asyncTest('timeouts()', function(){
+	driver.sleep(0).then(function() { ok(false, "not implemented"); start(); });
+});
+asyncTest('window()', function(){
+	driver.sleep(0).then(function() { ok(false, "not implemented"); start(); });
+});
+
+module("WebDriver.manage().timeouts()");
+asyncTest('implicitWait', function(){
+	driver.sleep(0).then(function() { ok(false, "not implemented"); start(); });
+});
+asyncTest('pageLoadTimeout', function(){
+	driver.sleep(0).then(function() { ok(false, "not implemented"); start(); });
+});
+asyncTest('setScriptTimeout', function(){
+	driver.sleep(0).then(function() { ok(false, "not implemented"); start(); });
+});
+
+module("WebDriver.manage().window()");
+asyncTest('getPosition()', function(){
+	driver.sleep(0).then(function() { ok(false, "not implemented"); start(); });
+});
+asyncTest('getSize()', function(){
+	driver.sleep(0).then(function() { ok(false, "not implemented"); start(); });
+});
+asyncTest('maxmize()', function(){
+	driver.sleep(0).then(function() { ok(false, "not implemented"); start(); });
+});
+asyncTest('setPosition()', function(){
+	driver.sleep(0).then(function() { ok(false, "not implemented"); start(); });
+});
+asyncTest('setSize()', function(){
+	driver.sleep(0).then(function() { ok(false, "not implemented"); start(); });
+});
+
+module("WebDriver.manage().window()");
+asyncTest('get()', function(){
+	driver.sleep(0).then(function() { ok(false, "not implemented"); start(); });
+});
+asyncTest('getAvailableLogTypes()', function(){
+	driver.sleep(0).then(function() { ok(false, "not implemented"); start(); });
+});
+
+module("WebDriver.switchTo()");
+asyncTest('activeElement()', function(){
+	driver.sleep(0).then(function() { ok(false, "not implemented"); start(); });
+});
+asyncTest('alert()', function(){
+	driver.sleep(0).then(function() { ok(false, "not implemented"); start(); });
+});
+asyncTest('defaultContent()', function(){
+	driver.sleep(0).then(function() { ok(false, "not implemented"); start(); });
+});
+asyncTest('frame()', function(){
+	driver.sleep(0).then(function() { ok(false, "not implemented"); start(); });
+});
+asyncTest('window()', function(){
+	driver.sleep(0).then(function() { ok(false, "not implemented"); start(); });
+});
+

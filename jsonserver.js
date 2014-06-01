@@ -2,43 +2,50 @@
  * 
  */
 var cq = [];
-var tq = [];
 var http = require("http");
 var url  = require("url");
+var handlers = [];
+
+function addHandler(path, handler) {
+	handlers.push({ regexp:new RegExp("^" + path.replace(/\*/g, ".*?") + "$"), handler:handler });
+}
+
+addHandler('/wd/hub/xdrpc', doClient);
+addHandler('/wd/hub/target', doTarget);
+for (var i = 2; i < process.argv.length; i++) {
+	try {
+		var text = require('fs').readFileSync(process.argv[i], 'utf-8');
+		eval(text);
+	} catch(err) {
+		console.error(err);
+	}
+}
+addHandler('/*', doResource);
+
 http.createServer(function (request, response) {
 	var reqline = request.method + " " + request.url;
 	console.log(reqline + " from [" + request.client.remoteAddress + "]");
 	var u = url.parse(request.url, true);
-	switch(u.pathname) {
-	case '/wd/hub/xdrpc':
-		doClient(request, response);
-		break;
-	case '/wd/hub/target':
-		doTarget(request, response);
-		break;
-	case '/webdriver.js':
-	case '/jsondriver.js':
-		doResource(request, response);
-		break;
-	default:
-		doResource(request, response);
-		//doNotFound(request, response);
+	for (var i = 0; i < handlers.length; i++) {
+		if (handlers[i].regexp.test(u.pathname)) {
+			handlers[i].handler(request, response);
+			break;
+		}
 	}
-}).listen(4444);
+}).listen(4444, function() {
+	console.log("BIND TO '" + this.address().address + "'");
+});
 
-//test target server
-//http.createServer(function (request, response) {
-//	var reqline = request.method + " " + request.url;
-//	console.log("test:" + reqline + " from [" + request.client.remoteAddress + "]");
-//	doResource(request, response);
-//}).listen(8888);
+function getSessionId(request) {
+	var url  = require('url').parse(request.url);
+	return url.pathname.replace(/^\/session\/(\d+)(\/.*)?$/, "$1");
+}
 
 function doResource(request, response) {
 	var fs = require('fs');
 	try {
 		var url  = require('url').parse(request.url);
 		var path = require('path');
-console.log(path);
 		var fullpath = url.pathname.match(/^.*\/$/) ? url.pathname + "index.html" : url.pathname;
 		var realpath = __dirname + path.normalize(fullpath);
 		var text = fs.readFileSync(realpath, 'utf-8');
@@ -90,12 +97,15 @@ function doNotFound(request, response) {
  
 function doClient(request, response) {
 	var json = "";
+	var sid = getSessionId(request);
 	switch (request.method) {
 	case 'POST':
 		request.on("data", function(data) {
 			json += data;
 		});
 		request.on("end", function(evt) {
+			var o = JSON.parse(json);
+			console.log(cq.length + ":" + JSON.stringify(o));
 			cq.push(new Queue(json, response));
 		});
 		break;
@@ -106,12 +116,13 @@ function doClient(request, response) {
 }
 
 function doTarget(request, response) {
+	var json = request;
+	var sid = getSessionId(request);
 	switch(request.method) {
 	case 'GET':
 		var interval = setInterval(function() {
 			if (cq.length > 0) {
-				var q = cq[0]; //cq.shift();
-				//tq.push(q);
+				var q = cq[0];
 				clearInterval(interval);
 				response.writeHead(200, {
 					"Access-Control-Allow-Origin" : "*",
@@ -120,13 +131,14 @@ function doTarget(request, response) {
 					"Allow" : "GET, POST, DELETE",
 					"Conetnt-Type" : "application/json"
 				});
+				console.log(q.rpc);
 				response.end(q.rpc);
 			}
 		}, 100);
 		break;
 	case 'POST':
 		if (cq.length > 0) {
-			var q = cq.shift(); //tq.shift();
+			var q = cq.shift();
 			var json = "";
 			request.on("data", function(data) {
 				json += data;
@@ -139,6 +151,7 @@ function doTarget(request, response) {
 					"Allow" : "GET, POST, DELETE",
 					"Conetnt-Type" : "application/json"
 				});
+				console.log(json);
 				q.response.end(json);
 				response.writeHead(200, {
 					"Access-Control-Allow-Origin" : "*",
@@ -172,7 +185,6 @@ function doTarget(request, response) {
 		break;
 	default:
 		console.log("unknown:" + request.method);
-		cq.shift();
 		response.writeHead(405, {"Content-Type" : "text/plain"});
 		response.end("Method Not Allowed");
 	}
@@ -180,6 +192,7 @@ function doTarget(request, response) {
 
 function Queue(rpc, response) {
 	var self = this;
+	self.id = rpc.id = (new Date()).getTime();
 	self.status = 0;
 	self.start = (new Date()).getTime();
 	self.rpc = rpc;
@@ -187,6 +200,6 @@ function Queue(rpc, response) {
 	self.timeout = setTimeout(function() {
 		self.response.writeHead(504, {"Content-Type" : "text/plain"});
 		self.response.end("Timeout");
-	}, 5000);
+	}, 10000);
 	return self;
 }
