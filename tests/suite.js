@@ -18,6 +18,104 @@ asyncTest('CLICK [START] TO START', function() {
 	ok(true);
 });
 
+/*
+asyncTest('path parser', function() {
+	var paths = [
+	'/status',
+	'/session',
+	'/sessions',
+	'/session/:sessionId',
+	'/session/:sessionId/window',
+	'/session/:sessionId/window_handle',
+	'/session/:sessionId/window_handles',
+	'/session/:sessionId/url',
+	'/session/:sessionId/back',
+	'/session/:sessionId/forward',
+	'/session/:sessionId/refresh',
+	'/session/:sessionId/cookie',
+	'/session/:sessionId/cookie/:name',
+	'/session/:sessionId/element',
+	'/session/:sessionId/elements',
+	'/session/:sessionId/element/active',
+	'/session/:sessionId/element/:id/element',
+	'/session/:sessionId/element/:id/elements',
+	'/session/:sessionId/element/:id/clear',
+	'/session/:sessionId/element/:id/click',
+	'/session/:sessionId/element/:id/value',
+	'/session/:sessionId/element/:id/submit',
+	'/session/:sessionId/element/:id/text',
+	'/session/:sessionId/element/:id/name',
+	'/session/:sessionId/element/:id/selected',
+	'/session/:sessionId/element/:id/enabled',
+	'/session/:sessionId/element/:id/displayed',
+	'/session/:sessionId/element/:id/location',
+	'/session/:sessionId/element/:id/size',
+	'/session/:sessionId/element/:id/attribute/:name',
+	'/session/:sessionId/element/:id/css/:propertyName',
+	'/session/:sessionId/element/:id/equals/:other',
+	'/session/:sessionId/window',
+	'/session/:sessionId/window/:windowHandle/maximize',
+	'/session/:sessionId/window/:windowHandle/position',
+	'/session/:sessionId/window/:windowHandle/size',
+	'/session/:sessionId/frame',
+	'/session/:sessionId/source',
+	'/session/:sessionId/title',
+	'/session/:sessionId/execute',
+	'/session/:sessionId/execute_async',
+	'/session/:sessionId/screenshot',
+	'/session/:sessionId/timeouts',
+	'/session/:sessionId/timeouts/async_script',
+	'/session/:sessionId/timeouts/implicit_wait',
+	'/session/:sessionId/click',
+	'/session/:sessionId/doubleclick',
+	'/session/:sessionId/buttondown',
+	'/session/:sessionId/buttonup',
+	'/session/:sessionId/moveto',
+	'/session/:sessionId/keys',
+	'/session/:sessionId/accept_alert',
+	'/session/:sessionId/dismiss_alert',
+	'/session/:sessionId/alert_text',
+	'/session/:sessionId/orientation',
+	'/session/:sessionId/log',
+	'/session/:sessionId/log/types'
+	];
+	function doCommand(method, pathList, data) {
+		var path = pathList.shift();
+		switch(path) {
+		case "status":
+			return doStatus(method, pathList, data);
+		case "session":
+			return doSession(method, pathList, data);
+		case "sessions":
+			return doSessions(method, pathList, data);
+		default:
+			return false;
+		}
+	}
+	function doStatus(method, pathList, data) {
+		console.log("doStatus()");
+	}
+	function doSession(method, pathList, data) {
+		var sessionId = pathList.shift;
+		console.log("doSession(" + sessionId + ")");
+	}
+	function doSessions(method, path, data) {
+		console.log("doSessions()");
+	}
+	function doUnknown(method, path, data) {
+		console.log("doUnknown()");
+	}
+	for (var i = 0; i < paths.length; i++) {
+		var pathList = paths[i].split(/\//);
+		pathList.shift();
+		if (!doCommand("GET", pathList, null)) {
+			doUnknown("GET", paths[i], null);
+		}
+	}
+	start();
+});
+*/
+
 /**
  * actions, call, close, controlFlow, executeAsyncScript, executeScript,
  * findElement, findElements, get, getAllWindowHandles, getCapabilities,
@@ -418,6 +516,23 @@ asyncTest("getPageSource", function() {
 		});
 });
 
+asyncTest('isElementPresent', function() {
+	title();
+	driver.get('/tests/input.html');
+	driver.isElementPresent(By.name('name'))
+	.then(function(e) {
+		ok(e, "element present");
+	});
+	driver.isElementPresent(By.name('namex'))
+	.then(function(e) {
+		ok(!e, "element not present");
+	});
+	driver.sleep(0)
+		.thenFinally(function() {
+			start();
+		});
+});
+
 /**
  * cancel, clear, click, findElement, findElements, getAttribute, getCssValue,
  * getDriver, getInnerHtml, getLocation, getOuterHtml, getSize, getTagName,
@@ -618,6 +733,112 @@ asyncTest("getValue", function() {
 });
 */
 
+asyncTest('isDisplayed', function() {
+	title();
+	driver.get('/tests/input.html');
+	driver.findElement(By.id("hidden"))
+		.isDisplayed()
+		.then(function(value) {
+			equal(value, false, "value:" + value);
+		})
+		.thenCatch(function() {
+			ok(false, "not found");
+		});
+
+	driver.findElement(By.id("nodisplay"))
+		.isDisplayed()
+		.then(function(value) {
+			equal(value, false, "value:" + value);
+		})
+		.thenCatch(function() {
+			ok(false, "not found");
+		});
+
+	driver.findElement(By.id("navi"))
+		.isDisplayed()
+		.then(function(value) {
+			equal(value, true, "value:" + value);
+		})
+		.thenCatch(function() {
+			ok(false, "not found");
+		});
+	
+	driver.sleep(0)
+		.thenFinally(function() {
+			start();
+		})
+});
+
+asyncTest('isSelected', function() {
+	title();
+	driver.get('/tests/input.html');
+	driver.findElement(By.xpath("//option[@value='50']"))
+		.isSelected()
+		.then(function(value) {
+			equal(value, true, "50:" + value);
+		})
+		.thenCatch(function() {
+			ok(false, "not found");
+		});
+
+	driver.findElement(By.xpath("//option[@value='30']"))
+	.isSelected()
+	.then(function(value) {
+		equal(value, false, "30:" + value);
+	})
+	.thenCatch(function() {
+		ok(false, "not found");
+	});
+
+	driver.findElement(By.xpath("//input[@name='sex' and @value='male']"))
+		.isSelected()
+		.then(function(value) {
+			equal(value, false, "male:" + value);
+		})
+		.thenCatch(function() {
+			ok(false, "not found");
+		});
+	
+	driver.findElement(By.xpath("//input[@name='sex' and @value='female']"))
+		.isSelected()
+		.then(function(value) {
+			equal(value, true, "female:" + value);
+		})
+		.thenCatch(function() {
+			ok(false, "not found");
+		});
+
+	driver.findElement(By.xpath("//input[@name='single']"))
+		.isSelected()
+		.then(function(value) {
+			equal(value, false, "single:" + value);
+		})
+		.thenCatch(function() {
+			ok(false, "not found");
+		});
+	
+	driver.findElement(By.xpath("//input[@name='mail']"))
+		.isSelected()
+		.then(function(value) {
+			equal(value, true, "mail:" + value);
+		})
+		.thenCatch(function() {
+			ok(false, "not found");
+		});
+	
+	driver.findElement(By.name("name"))
+		.isSelected()
+		.then(function(value) {
+			equal(value, false, "input:" + value);
+		})
+		.thenCatch(function() {
+			ok(false, "not found");
+		})
+		.thenFinally(function() {
+			start();
+		});
+});
+
 asyncTest("elementByName", function() {
 	title();
 	driver.get('/tests/input.html');
@@ -809,6 +1030,14 @@ asyncTest('to()', function(){
 });
 
 module("WebDriver.manage()");
+asyncTest('manage()', function() {
+	var manage = driver.manage();
+	ok(typeof(manage.addCookie) == 'function', "addCookie");
+	
+	ok(typeof(manage.logs) == 'function', "logs");
+	start();
+});
+
 asyncTest('addCookie()', function(){
 	var cookie = (new Date).getTime();
 	driver.get("input.html");
@@ -948,9 +1177,28 @@ asyncTest('getCookies()', function(){
 		});
 });
 
+module("Logs");
 asyncTest('logs()', function(){
-	driver.sleep(0).then(function() { ok(false, "not implemented"); start(); });
+	var logs = driver.manage().logs();
+	ok(typeof(logs.get) == 'function', "get");
+	ok(typeof(logs.getAvailableLogTypes) == 'function', "getAvailableLogTypes");
+	start();
 });
+
+asyncTest("get()", function() {
+	driver.manage().logs().get()
+		.then(function(logs) {
+			ok(true);
+		})
+		.thenCatch(function() {
+			ok(false, "not implemented");
+		})
+		.thenFinally(function() {
+			start();
+		})
+});
+
+module("Timeouts");
 asyncTest('timeouts()', function(){
 	driver.sleep(0).then(function() { ok(false, "not implemented"); start(); });
 });

@@ -9,6 +9,12 @@
         padding : 10px;
         margin-top: 20px;
     }
+    #hidden {
+        visibility : hidden;
+    }
+    #nodisplay {
+        display : none;
+    }
     </style>
   </head>
   <body>
@@ -35,10 +41,16 @@
       </select><br>
       Sex :
         <input type="radio" name="sex" value="male"> mail
-        <input type="radio" name="sex" value="femail"> femail<br>
+        <input type="radio" name="sex" value="female" checked> femail<br>
+      Single :
+        <input type="checkbox" name="single"><br>
+      Receive mail:
+        <input type="checkbox" name="mail" checked><br>
       <input type="file" value="添付ファイル"><br>
       <input type="submit" name="ok">
       <input type="reset" name="cancel">
     </form>
+    <span id="hidden">hidden</span>
+    <span id="nodisplay">nodisplay</span>
   </body>
 </html>

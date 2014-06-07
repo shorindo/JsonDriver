@@ -1,4 +1,5 @@
-window.addEventListener("load", function() {
+(function() {
+var init = function() {
 	var CLASS_NAME = "json.driver.Target";
 	var BASE_URL = '%BASE_URL%';
 	var founds = [];
@@ -24,12 +25,12 @@ window.addEventListener("load", function() {
 		'/session/:sessionId/element/:id/clear'				: doNotImplement,
 		'/session/:sessionId/element/:id/click'				: doElementClick,
 		'/session/:sessionId/element/:id/value'				: doElementValue,
-		'/session/:sessionId/element/:id/submit'			: doElementClick,
+		'/session/:sessionId/element/:id/submit'			: doNotImplement,
 		'/session/:sessionId/element/:id/text'				: doElementText,
 		'/session/:sessionId/element/:id/name'				: doElementName,
-		'/session/:sessionId/element/:id/selected'			: doNotImplement,
+		'/session/:sessionId/element/:id/selected'			: doElementSelected,
 		'/session/:sessionId/element/:id/enabled'			: doNotImplement,
-		'/session/:sessionId/element/:id/displayed'			: doNotImplement,
+		'/session/:sessionId/element/:id/displayed'			: doElementDisplayed,
 		'/session/:sessionId/element/:id/location'			: doNotImplement,
 		'/session/:sessionId/element/:id/size'				: doNotImplement,
 		'/session/:sessionId/element/:id/attribute/:name'	: doElementAttribute,
@@ -58,14 +59,20 @@ window.addEventListener("load", function() {
 		'/session/:sessionId/dismiss_alert'					: doNotImplement,
 		'/session/:sessionId/alert_text'					: doNotImplement,
 		'/session/:sessionId/orientation'					: doNotImplement,
-		'/session/:sessionId/log/types'						: doNotImplement,
-		'/logs'												: doNotImplement
+		'/session/:sessionId/log'							: doNotImplement,
+		'/session/:sessionId/log/types'						: doNotImplement
 	};
 	var COMMANDS_EXPR = [];
 	for (var key in COMMANDS) {
+		var params = [];
+		var replacer = function(str,p1,offset,s) {
+			params.push(p1);
+			return "([^\\/]+)";
+		};
 		COMMANDS_EXPR.push({
-			regexp : new RegExp("^" + key.replace(/:[^\/]+/g, "[^\\/]+") + "$"),
-			command : COMMANDS[key]
+			regexp : new RegExp("^" + key.replace(/:([^\/]+)/g, replacer) + "$"),
+			command : COMMANDS[key],
+			params : params
 		});
 	}
 
@@ -80,17 +87,23 @@ window.addEventListener("load", function() {
 						doCommand(rpc);
 						connect();
 					} catch(e) {
-						log("[E]" + e.toString());
-						doError(rpc, 9, e.toString(), 'UnknownError');
+						log("[E]" + jsonify(xhr));
+						//doError(rpc, 9, e.toString(), 'UnknownError');
 						setTimeout(connect, 5000);
 					}
 				} else {
-					log("[E]" + JSON.stringify(xhr));
+					log("[E]" + jsonify(xhr));
 					//doError(rpc, 9, xhr.statusText, 'UnknownError');
 					setTimeout(connect, 5000);
 				}
 			}
 		}
+		xhr.onerror = function(err) {
+			console.log("error");
+		};
+		xhr.ontimeout = function(err) {
+			console.log("timeout");
+		};
 		xhr.open("GET", BASE_URL + "/wd/hub/target");
 		xhr.send();
 	}
@@ -99,6 +112,19 @@ window.addEventListener("load", function() {
 		var line = document.body.appendChild(document.createElement("div"));
 		line.appendChild(document.createTextNode(text));
 		console.log(text);
+	}
+	
+	function jsonify(o) {
+		var seen=[];
+		var jso = JSON.stringify(o, function(k,v){
+		if (v instanceof Node) return '[node]';
+		if (typeof v == 'object') {
+			if ( !seen.indexOf(v) ) { return '__cycle__'; }
+				seen.push(v);
+			}
+			return v;
+		});
+		return jso;
 	}
 	
 	function geometry(e) {
@@ -131,7 +157,7 @@ window.addEventListener("load", function() {
 	}
 	
 	function response(obj, callback) {
-		var result = JSON.stringify(obj);
+		var result = jsonify(obj);
 		var xhr = new XMLHttpRequest();
 		if (typeof(callback) == 'function') {
 			xhr.onreadystatechange = function() {
@@ -151,17 +177,21 @@ window.addEventListener("load", function() {
 		founds.push(e);
 		return String(id);
 	}
-	function getSessionId(rpc) {
-		return rpc.path.replace(/^\/session\/([^\/]+).*$/, "$1");
-	}
+//	function getSessionId(rpc) {
+//		return rpc.path.replace(/^\/session\/([^\/]+).*$/, "$1");
+//	}
 	
 	function getCommand(rpc) {
 		return rpc.path.replace(/^.*?([^\/]+)$/, "$1");
 	}
 	
 	function getElementId(rpc) {
-		//console.log("getElementId(" + rpc.path + ")");
 		var result = rpc.path.replace(/^\/session\/([^\/]+)\/element\/(\d+)(\/.*)?$/, "$2");
+		return result;
+	}
+
+	function getElementElementId(rpc) {
+		var result = rpc.path.replace(/^\/session\/[^\/]+\/element\/[^\/]+\/element\/([^\/]+)(\/.*)?$/, "$1");
 		return result;
 	}
 	
@@ -176,9 +206,13 @@ window.addEventListener("load", function() {
 	}
 
 	function doCommand(rpc) {
-		for (var key in COMMANDS_EXPR) {
-			if (COMMANDS_EXPR[key].regexp.test(rpc.path)) {
-				COMMANDS_EXPR[key].command(rpc);
+		for (var i = 0; i < COMMANDS_EXPR.length; i++) {
+			var matches = rpc.path.match(COMMANDS_EXPR[i].regexp)
+			if (matches) {
+				for (var j = 1; j < matches.length; j++) {
+					rpc[COMMANDS_EXPR[i].params[j - 1]] = matches[j];
+				}
+				COMMANDS_EXPR[i].command(rpc);
 				return;
 			}
 		}
@@ -204,7 +238,7 @@ window.addEventListener("load", function() {
 		}
 
 		response({
-			"sessionId":getSessionId(rpc),
+			"sessionId":rpc.sessionId,
 			"status":0,
 			"value":{
 				"platform":navigator.platform,
@@ -213,7 +247,7 @@ window.addEventListener("load", function() {
 				"browserName":browserName,
 				"rotatable":false,
 				"locationContextEnabled":false,
-				"webdriver.remote.sessionid":getSessionId(rpc),
+				"webdriver.remote.sessionid":rpc.sessionId,
 				"version":browserVersion,
 				"databaseEnabled":("openDatabase" in window ? true : false),
 				"cssSelectorsEnabled":("querySelector" in document ? true : false),
@@ -232,7 +266,7 @@ window.addEventListener("load", function() {
 	function doUrl(rpc) {
 		if (rpc.method == 'GET') {
 			response({
-				"sessionId":getSessionId(rpc),
+				"sessionId":rpc.sessionId,
 				"status":0,
 				"value":location.href,
 				"state":"success",
@@ -240,7 +274,7 @@ window.addEventListener("load", function() {
 			});
 		} else {
 			response({
-				"sessionId":getSessionId(rpc),
+				"sessionId":rpc.sessionId,
 				"status":0,
 				"value":null,
 				"state":"success",
@@ -253,14 +287,14 @@ window.addEventListener("load", function() {
 	
 	function doTitle(rpc) {
 		response({
-			"sessionId":getSessionId(rpc),
+			"sessionId":rpc.sessionId,
 			"status":0,
 			"value":document.title,
 			"state":"success",
 			"class":CLASS_NAME
 		});
 	}
-	
+
 	function doElement(rpc, context) {
 		try {
 			switch(rpc.data.using) {
@@ -299,7 +333,7 @@ window.addEventListener("load", function() {
 	function doBack(rpc) {
 		try {
 			response({
-				"sessionId":getSessionId(rpc),
+				"sessionId":rpc.sessionId,
 				"status":0,
 				"value":null,
 				"state":"success",
@@ -309,7 +343,7 @@ window.addEventListener("load", function() {
 			});
 		} catch (error) {
 			response({
-				"sessionId":getSessionId(rpc),
+				"sessionId":rpc.sessionId,
 				"status":17,
 				"value":error.toString(),
 				"state":"JavaScriptError",
@@ -321,7 +355,7 @@ window.addEventListener("load", function() {
 	function doForward(rpc) {
 		try {
 			response({
-				"sessionId":getSessionId(rpc),
+				"sessionId":rpc.sessionId,
 				"status":0,
 				"value":null,
 				"state":"success",
@@ -331,7 +365,7 @@ window.addEventListener("load", function() {
 			});
 		} catch (error) {
 			response({
-				"sessionId":getSessionId(rpc),
+				"sessionId":rpc.sessionId,
 				"status":17,
 				"value":error.toString(),
 				"state":"JavaScriptError",
@@ -343,7 +377,7 @@ window.addEventListener("load", function() {
 	function doRefresh(rpc) {
 		try {
 			response({
-				"sessionId":getSessionId(rpc),
+				"sessionId":rpc.sessionId,
 				"status":0,
 				"value":null,
 				"state":"success",
@@ -353,7 +387,7 @@ window.addEventListener("load", function() {
 			});
 		} catch (error) {
 			response({
-				"sessionId":getSessionId(rpc),
+				"sessionId":rpc.sessionId,
 				"status":17,
 				"value":error.toString(),
 				"state":"JavaScriptError",
@@ -367,7 +401,7 @@ window.addEventListener("load", function() {
 		var args   = rpc.data.args;
 		try {
 			response({
-				"sessionId":getSessionId(rpc),
+				"sessionId":rpc.sessionId,
 				"status":0,
 				"value":eval(script),
 				"state":"success",
@@ -375,7 +409,7 @@ window.addEventListener("load", function() {
 			});
 		} catch (error) {
 			response({
-				"sessionId":getSessionId(rpc),
+				"sessionId":rpc.sessionId,
 				"status":17,
 				"value":error.toString(),
 				"state":"JavaScriptError",
@@ -386,7 +420,7 @@ window.addEventListener("load", function() {
 	
 	function doSource(rpc) {
 		response({
-			"sessionId":getSessionId(rpc),
+			"sessionId":rpc.sessionId,
 			"status":0,
 			"value":document.documentElement.outerHTML,
 			"state":"success",
@@ -407,7 +441,7 @@ window.addEventListener("load", function() {
 				results.push({"ELEMENT":newElementId(e)});
 			}
 			response({
-				"sessionId":getSessionId(rpc),
+				"sessionId":rpc.sessionId,
 				"status":0,
 				"value":results,
 				"state":"success",
@@ -417,7 +451,7 @@ window.addEventListener("load", function() {
 			var e = elements.snapshotItem(0);
 			hilit(e);
 			response({
-				"sessionId":getSessionId(rpc),
+				"sessionId":rpc.sessionId,
 				"status":0,
 				"value":{"ELEMENT":newElementId(e)},
 				"state":"success",
@@ -425,7 +459,7 @@ window.addEventListener("load", function() {
 			});
 		} else {
 			response({
-				"sessionId":getSessionId(rpc),
+				"sessionId":rpc.sessionId,
 				"status":7,
 				"value":null,
 				"state":"NoSuchElement",
@@ -445,7 +479,7 @@ window.addEventListener("load", function() {
 				results.push({"ELEMENT":newElementId(e)});
 			}
 			response({
-				"sessionId":getSessionId(rpc),
+				"sessionId":rpc.sessionId,
 				"status":0,
 				"value":results,
 				"state":"success",
@@ -455,7 +489,7 @@ window.addEventListener("load", function() {
 			var e = elements[0];
 			hilit(e);
 			response({
-				"sessionId":getSessionId(rpc),
+				"sessionId":rpc.sessionId,
 				"status":0,
 				"value":{"ELEMENT":newElementId(e)},
 				"state":"success",
@@ -463,7 +497,7 @@ window.addEventListener("load", function() {
 			});
 		} else {
 			response({
-				"sessionId":getSessionId(rpc),
+				"sessionId":rpc.sessionId,
 				"status":7,
 				"value":null,
 				"state":"NoSuchElement",
@@ -485,7 +519,7 @@ window.addEventListener("load", function() {
 				results.push({"ELEMENT":newElementId(e)});
 			}
 			response({
-				"sessionId":getSessionId(rpc),
+				"sessionId":rpc.sessionId,
 				"status":0,
 				"value":results,
 				"state":"success",
@@ -495,7 +529,7 @@ window.addEventListener("load", function() {
 			var e = elements.snapshotItem(0);
 			hilit(e);
 			response({
-				"sessionId":getSessionId(rpc),
+				"sessionId":rpc.sessionId,
 				"status":0,
 				"value":{"ELEMENT":newElementId(e)},
 				"state":"success",
@@ -503,7 +537,7 @@ window.addEventListener("load", function() {
 			});
 		} else {
 			response({
-				"sessionId":getSessionId(rpc),
+				"sessionId":rpc.sessionId,
 				"status":7,
 				"value":null,
 				"state":"NoSuchElement",
@@ -524,7 +558,7 @@ window.addEventListener("load", function() {
 				results.push({"ELEMENT":newElementId(e)});
 			}
 			response({
-				"sessionId":getSessionId(rpc),
+				"sessionId":rpc.sessionId,
 				"status":0,
 				"value":results,
 				"state":"success",
@@ -534,7 +568,7 @@ window.addEventListener("load", function() {
 			var e = elements.snapshotItem(0);
 			hilit(e);
 			response({
-				"sessionId":getSessionId(rpc),
+				"sessionId":rpc.sessionId,
 				"status":0,
 				"value":{"ELEMENT":newElementId(e)},
 				"state":"success",
@@ -542,7 +576,7 @@ window.addEventListener("load", function() {
 			});
 		} else {
 			response({
-				"sessionId":getSessionId(rpc),
+				"sessionId":rpc.sessionId,
 				"status":7,
 				"value":null,
 				"state":"NoSuchElement",
@@ -552,8 +586,9 @@ window.addEventListener("load", function() {
 	}
 	
 	function doElementByLinkText(rpc, context) {
+		context = context ? context : document;
 		var text = rpc.data.value;
-		var snapshot = document.evaluate("//a[text()='" + text + "']", document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
+		var snapshot = document.evaluate("//a[text()='" + text + "']", context, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
 		if (getCommand(rpc) == 'elements') {
 			var results = [];
 			for (var i = 0; i < snapshot.snapshotLength; i++) {
@@ -563,7 +598,7 @@ window.addEventListener("load", function() {
 				results.push({"ELEMENT":newElementId(e)});
 			} 
 			response({
-				"sessionId":getSessionId(rpc),
+				"sessionId":rpc.sessionId,
 				"status":0,
 				"value":results,
 				"state":"success",
@@ -573,7 +608,7 @@ window.addEventListener("load", function() {
 			var e = snapshot.snapshotItem(0);
 			hilit(e);
 			response({
-				"sessionId":getSessionId(rpc),
+				"sessionId":rpc.sessionId,
 				"status":0,
 				"value":{"ELEMENT":newElementId(e)},
 				"state":"success",
@@ -581,7 +616,7 @@ window.addEventListener("load", function() {
 			});
 		} else {
 			response({
-				"sessionId":getSessionId(rpc),
+				"sessionId":rpc.sessionId,
 				"status":7,
 				"value":null,
 				"state":"NoSuchElement",
@@ -594,7 +629,7 @@ window.addEventListener("load", function() {
 		context = context ? context : document;
 		var text = rpc.data.value;
 		var result = {
-			"sessionId":getSessionId(rpc),
+			"sessionId":rpc.sessionId,
 			"status":7,
 			"value":[],
 			"state":"NoSuchElement",
@@ -623,7 +658,7 @@ window.addEventListener("load", function() {
 		var xhr = new XMLHttpRequest();
 		xhr.open("POST", BASE_URL + "/wd/hub/target");
 		xhr.setRequestHeader('Content-Type', 'application/json');
-		xhr.send(JSON.stringify(result));
+		xhr.send(jsonify(result));
 		log("<<" + result);
 	}
 
@@ -639,7 +674,7 @@ window.addEventListener("load", function() {
 				results.push({"ELEMENT":newElementId(e)});
 			}
 			response({
-				"sessionId":getSessionId(rpc),
+				"sessionId":rpc.sessionId,
 				"status":0,
 				"value":results,
 				"state":"success",
@@ -649,7 +684,7 @@ window.addEventListener("load", function() {
 			var e = elements.snapshotItem(0);
 			hilit(e);
 			response({
-				"sessionId":getSessionId(rpc),
+				"sessionId":rpc.sessionId,
 				"status":0,
 				"value":{"ELEMENT":newElementId(e)},
 				"state":"success",
@@ -657,7 +692,7 @@ window.addEventListener("load", function() {
 			});
 		} else {
 			response({
-				"sessionId":getSessionId(rpc),
+				"sessionId":rpc.sessionId,
 				"status":7,
 				"value":null,
 				"state":"NoSuchElement",
@@ -667,8 +702,9 @@ window.addEventListener("load", function() {
 	}
 
 	function doElementByXpath(rpc, context) {
+		context = context ? context : document
 		var xpath = rpc.data.value;
-		var snapshot = document.evaluate(xpath, document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
+		var snapshot = document.evaluate(xpath, context, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
 		if (getCommand(rpc) == 'elements') {
 			var results = [];
 			for (var i = 0; i < snapshot.snapshotLength; i++) {
@@ -677,7 +713,7 @@ window.addEventListener("load", function() {
 				results.push({"ELEMENT":newElementId(e)});
 			}
 			response({
-				"sessionId":getSessionId(rpc),
+				"sessionId":rpc.sessionId,
 				"status":0,
 				"value":results,
 				"state":"success",
@@ -687,7 +723,7 @@ window.addEventListener("load", function() {
 			var e = snapshot.snapshotItem(0);
 			hilit(e);
 			response({
-				"sessionId":getSessionId(rpc),
+				"sessionId":rpc.sessionId,
 				"status":0,
 				"value":{"ELEMENT":newElementId(e)},
 				"state":"success",
@@ -695,7 +731,7 @@ window.addEventListener("load", function() {
 			});
 		} else {
 			response({
-				"sessionId":getSessionId(rpc),
+				"sessionId":rpc.sessionId,
 				"status":7,
 				"value":null,
 				"state":"NoSuchElement",
@@ -708,7 +744,7 @@ window.addEventListener("load", function() {
 		var element = founds[getElementId(rpc)];
 		if (element) {
 			response({
-				"sessionId":getSessionId(rpc),
+				"sessionId":rpc.sessionId,
 				"status":0,
 				"value":null,
 				"state":"success",
@@ -726,7 +762,7 @@ window.addEventListener("load", function() {
 			});
 		} else {
 			response({
-				"sessionId":getSessionId(rpc),
+				"sessionId":rpc.sessionId,
 				"status":7,
 				"value":null,
 				"state":"NoSuchElement",
@@ -739,7 +775,7 @@ window.addEventListener("load", function() {
 		var element = founds[getElementId(rpc)];
 		if (element) {
 			response({
-				"sessionId":getSessionId(rpc),
+				"sessionId":rpc.sessionId,
 				"status":0,
 				"value":element.value,
 				"state":"success",
@@ -747,7 +783,7 @@ window.addEventListener("load", function() {
 			});
 		} else {
 			response({
-				"sessionId":getSessionId(rpc),
+				"sessionId":rpc.sessionId,
 				"status":7,
 				"value":null,
 				"state":"NoSuchElement",
@@ -760,7 +796,7 @@ window.addEventListener("load", function() {
 		var element = founds[getElementId(rpc)];
 		if (element) {
 			response({
-				"sessionId":getSessionId(rpc),
+				"sessionId":rpc.sessionId,
 				"status":0,
 				"value":element.textContent,
 				"state":"success",
@@ -768,7 +804,7 @@ window.addEventListener("load", function() {
 			});
 		} else {
 			response({
-				"sessionId":getSessionId(rpc),
+				"sessionId":rpc.sessionId,
 				"status":7,
 				"value":null,
 				"state":"NoSuchElement",
@@ -782,7 +818,7 @@ window.addEventListener("load", function() {
 		var element = founds[getElementId(rpc)];
 		if (element) {
 			response({
-				"sessionId":getSessionId(rpc),
+				"sessionId":rpc.sessionId,
 				"status":0,
 				"value":element.nodeName.toLowerCase(),
 				"state":"success",
@@ -790,7 +826,7 @@ window.addEventListener("load", function() {
 			});
 		} else {
 			response({
-				"sessionId":getSessionId(rpc),
+				"sessionId":rpc.sessionId,
 				"status":7,
 				"value":null,
 				"state":"NoSuchElement",
@@ -801,18 +837,19 @@ window.addEventListener("load", function() {
 	
 	function doElementCssValue(rpc) {
 		var result = {
-			"sessionId":getSessionId(rpc),
+			"sessionId":rpc.sessionId,
 			"status":7,
 			"value":null,
 			"state":"NoSuchElement",
 			"class":CLASS_NAME
 		};
-		var element = founds[getElementId(rpc)];
+		var element = founds[rpc.id];
+		var styles = window.getComputedStyle(element);
 		if (element) {
 			result = {
-				"sessionId":getSessionId(rpc),
+				"sessionId":rpc.sessionId,
 				"status":0,
-				"value":element.style[getCssName(rpc)],
+				"value":styles[rpc.propertyName],
 				"state":"success",
 				"class":CLASS_NAME
 			};
@@ -824,7 +861,7 @@ window.addEventListener("load", function() {
 		var element = founds[getElementId(rpc)];
 		if (element) {
 			response({
-				"sessionId":getSessionId(rpc),
+				"sessionId":rpc.sessionId,
 				"status":0,
 				"value":element.getAttribute(getAttributeName(rpc)),
 				"state":"success",
@@ -832,7 +869,52 @@ window.addEventListener("load", function() {
 			});
 		} else {
 			response({
-				"sessionId":getSessionId(rpc),
+				"sessionId":rpc.sessionId,
+				"status":7,
+				"value":null,
+				"state":"NoSuchElement",
+				"class":CLASS_NAME
+			});
+		}
+	}
+	
+	function doElementDisplayed(rpc) {
+		var element = founds[getElementId(rpc)];
+		if (element) {
+			var css = window.getComputedStyle(element);
+			var display =
+				css['visibility'] != "hidden" && css['display'] != "none";
+			response({
+				"sessionId":rpc.sessionId,
+				"status":0,
+				"value":display,
+				"state":"success",
+				"class":CLASS_NAME
+			});
+		} else {
+			response({
+				"sessionId":rpc.sessionId,
+				"status":7,
+				"value":null,
+				"state":"NoSuchElement",
+				"class":CLASS_NAME
+			});
+		}
+	}
+	
+	function doElementSelected(rpc) {
+		var element = founds[getElementId(rpc)];
+		if (element) {
+			response({
+				"sessionId":rpc.sessionId,
+				"status":0,
+				"value":(element.selected ||element.checked) ? true : false,
+				"state":"success",
+				"class":CLASS_NAME
+			});
+		} else {
+			response({
+				"sessionId":rpc.sessionId,
 				"status":7,
 				"value":null,
 				"state":"NoSuchElement",
@@ -846,7 +928,7 @@ window.addEventListener("load", function() {
 		var args   = rpc.data.args;
 		var evalResult = eval(script);
 		response({
-			"sessionId":getSessionId(rpc),
+			"sessionId":rpc.sessionId,
 			"status":0,
 			"value":evalResult,
 			"state":"success",
@@ -855,13 +937,12 @@ window.addEventListener("load", function() {
 	}
 	
 	function doElementElement(rpc) {
-		//console.log("doElementElement()");
-		var parent = founds[getElementId(rpc)];
-		if (parent) {
-			doElement(rpc, parent);
+		var context = founds[rpc.id];
+		if (context) {
+			doElement(rpc, context);
 		} else {
 			response({
-				"sessionId":getSessionId(rpc),
+				"sessionId":rpc.sessionId,
 				"status":7,
 				"value":null,
 				"state":"NoSuchElement",
@@ -872,7 +953,7 @@ window.addEventListener("load", function() {
 	
 	function doCookie(rpc) {
 		var resp = {
-			"sessionId":getSessionId(rpc),
+			"sessionId":rpc.sessionId,
 			"status":9,
 			"value":null,
 			"state":"failure",
@@ -929,7 +1010,7 @@ window.addEventListener("load", function() {
 	
 	function doNotImplement(rpc) {
 		response({
-			"sessionId":getSessionId(rpc),
+			"sessionId":rpc.sessionId,
 			"status":9,
 			"value":null,
 			"state":"not implemented",
@@ -939,7 +1020,7 @@ window.addEventListener("load", function() {
 	
 	function doUnknown(rpc) {
 		response({
-			"sessionId":getSessionId(rpc),
+			"sessionId":rpc.sessionId,
 			"status":9,
 			"value":null,
 			"state":"unknown",
@@ -949,7 +1030,7 @@ window.addEventListener("load", function() {
 
 	function doError(rpc, status, value, state) {
 		response({
-			"sessionId":getSessionId(rpc),
+			"sessionId":rpc.sessionId,
 			"status":status,
 			"value":value,
 			"state":state,
@@ -958,4 +1039,11 @@ window.addEventListener("load", function() {
 	}
 	
 	connect();
-});
+};
+
+	if (document.readyState == "complete")
+		init();
+	else
+		window.addEventListener("load", init);
+})();
+

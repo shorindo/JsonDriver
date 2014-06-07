@@ -1,7 +1,7 @@
 /*
  * 
  */
-var cq = [];
+var cq = {0:[]};
 var http = require("http");
 var url  = require("url");
 var handlers = [];
@@ -105,8 +105,8 @@ function doClient(request, response) {
 		});
 		request.on("end", function(evt) {
 			var o = JSON.parse(json);
-			console.log(cq.length + ":" + JSON.stringify(o));
-			cq.push(new Queue(json, response));
+			console.log(cq[0].length + ":" + JSON.stringify(o));
+			cq[0].push(new Queue(json, response));
 		});
 		break;
 	default:
@@ -121,8 +121,8 @@ function doTarget(request, response) {
 	switch(request.method) {
 	case 'GET':
 		var interval = setInterval(function() {
-			if (cq.length > 0) {
-				var q = cq[0];
+			if (cq[0].length > 0) {
+				var q = cq[0][0];
 				clearInterval(interval);
 				response.writeHead(200, {
 					"Access-Control-Allow-Origin" : "*",
@@ -137,8 +137,8 @@ function doTarget(request, response) {
 		}, 100);
 		break;
 	case 'POST':
-		if (cq.length > 0) {
-			var q = cq.shift();
+		if (cq[0].length > 0) {
+			var q = cq[0].shift();
 			var json = "";
 			request.on("data", function(data) {
 				json += data;
