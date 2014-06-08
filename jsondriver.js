@@ -1,4 +1,7 @@
 (function() {
+/**
+ * 初期化する
+ */
 var init = function() {
 	var CLASS_NAME = "json.driver.Target";
 	var BASE_URL = '%BASE_URL%';
@@ -41,11 +44,17 @@ var init = function() {
 		'/session/:sessionId/window/:windowHandle/position'	: doNotImplement,
 		'/session/:sessionId/window/:windowHandle/size'		: doNotImplement,
 		'/session/:sessionId/frame'							: doNotImplement,
+		'/session/:sessionId/frame/parent'					: doNotImplement,
 		'/session/:sessionId/source'						: doSource,
 		'/session/:sessionId/title'							: doTitle,
 		'/session/:sessionId/execute'						: doExecute,
 		'/session/:sessionId/execute_async'					: doNotImplement,
 		'/session/:sessionId/screenshot'					: doNotImplement,
+		'/session/:sessionId/ime/available_engines'			: doNotImplement,
+		'/session/:sessionId/ime/active_engine'				: doNotImplement,
+		'/session/:sessionId/ime/activated'					: doNotImplement,
+		'/session/:sessionId/ime/deactivate'				: doNotImplement,
+		'/session/:sessionId/ime/activate'					: doNotImplement,
 		'/session/:sessionId/timeouts'						: doNotImplement,
 		'/session/:sessionId/timeouts/async_script'			: doNotImplement,
 		'/session/:sessionId/timeouts/implicit_wait'		: doNotImplement,
@@ -76,6 +85,9 @@ var init = function() {
 		});
 	}
 
+	/**
+	 * JsonServerに接続する
+	 */
 	function connect() {
 		var xhr = new XMLHttpRequest();
 		xhr.onreadystatechange = function() {
@@ -99,7 +111,7 @@ var init = function() {
 			}
 		}
 		xhr.onerror = function(err) {
-			console.log("error");
+			console.log("error:" + jsonify(err));
 		};
 		xhr.ontimeout = function(err) {
 			console.log("timeout");
@@ -397,13 +409,17 @@ var init = function() {
 	}
 
 	function doExecute(rpc) {
-		var script = rpc.data.script;
-		var args   = rpc.data.args;
 		try {
+			var script = rpc.data.script.match(/^\s*return\s+/) ?
+				rpc.data.script : "return " + rpc.data.script;
+			var args   = [];
+			for (var i = 0; i < rpc.data.args.length; i++) {
+				args.push(founds[rpc.data.args[i].ELEMENT]);
+			}
 			response({
 				"sessionId":rpc.sessionId,
 				"status":0,
-				"value":eval(script),
+				"value":eval("(function(){" + script + "})").apply(window, args),
 				"state":"success",
 				"class":CLASS_NAME
 			});

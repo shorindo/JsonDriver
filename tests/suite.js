@@ -881,16 +881,15 @@ asyncTest("elementsByName", function() {
 		});
 })
 
-/*
 asyncTest("getOuterHtml", function() {
 	driver.get('/tests/input.html');
 	driver.findElement(By.id('navi'))
 		.getOuterHtml()
 		.then(function(html) {
-			ok(true);
+			ok(html.indexOf("<div ") >= 0, html);
 		})
-		.thenCatch(function() {
-			ok(false, "not found");
+		.thenCatch(function(e) {
+			ok(false, e);
 		})
 		.thenFinally(function() {
 			start();
@@ -902,16 +901,15 @@ asyncTest("getInnerHtml", function() {
 	driver.findElement(By.id('navi'))
 		.getInnerHtml()
 		.then(function(html) {
-			ok(true);
+			ok(html.indexOf('<a ') >= 0, html);
 		})
-		.thenCatch(function() {
-			ok(false, "not found");
+		.thenCatch(function(e) {
+			ok(false, e);
 		})
 		.thenFinally(function() {
 			start();
 		});
 });
-*/
 
 module("WebDriver.navigate()");
 asyncTest("navigate()", function() {
@@ -1190,8 +1188,8 @@ asyncTest("get()", function() {
 		.then(function(logs) {
 			ok(true);
 		})
-		.thenCatch(function() {
-			ok(false, "not implemented");
+		.thenCatch(function(e) {
+			ok(false, e);
 		})
 		.thenFinally(function() {
 			start();
