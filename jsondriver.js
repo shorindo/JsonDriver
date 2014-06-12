@@ -121,9 +121,9 @@ var init = function() {
 	}
 	
 	function log(text) {
-		var line = document.body.appendChild(document.createElement("div"));
-		line.appendChild(document.createTextNode(text));
-		console.log(text);
+		//var line = document.body.appendChild(document.createElement("div"));
+		//line.appendChild(document.createTextNode(text));
+		//console.log(text);
 	}
 	
 	function jsonify(o) {
@@ -414,7 +414,10 @@ var init = function() {
 				rpc.data.script : "return " + rpc.data.script;
 			var args   = [];
 			for (var i = 0; i < rpc.data.args.length; i++) {
-				args.push(founds[rpc.data.args[i].ELEMENT]);
+				if (typeof(rpc.data.args[i]) == 'object')
+					args.push(founds[rpc.data.args[i].ELEMENT]);
+				else
+					args.push(rpc.data.args[i]);
 			}
 			response({
 				"sessionId":rpc.sessionId,

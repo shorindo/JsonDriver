@@ -14,6 +14,19 @@ function title() {
 	document.title = QUnit.config.current.testNumber + "." + QUnit.config.current.testName;
 }
 
+function jsonify(o) {
+	var seen=[];
+	var jso = JSON.stringify(o, function(k,v){
+		if (v instanceof Node) return '[node]';
+		if (typeof v == 'object') {
+			if ( !seen.indexOf(v) ) { return '__cycle__'; }
+				seen.push(v);
+		}
+		return v;
+	});
+	return jso;
+}
+
 asyncTest('CLICK [START] TO START', function() {
 	ok(true);
 });
@@ -488,6 +501,32 @@ asyncTest("executeScript", function() {
 		.thenCatch(function() {
 			ok(false, "can't execute");
 		});
+	driver.executeScript(function(a,b,c) {
+		console.log(arguments);
+		return a * b * c;
+	}, 23, 45, 67)
+		.then(function(result) {
+			equal(result, 23*45*67, "with native parameters");
+		})
+		.thenCatch(function() {
+			ok(false, "can't execute");
+		});
+	driver.findElement(By.name("phone"))
+		.then(function(e) {
+			driver.executeScript(function(e) {
+					e.value = "12345";
+					return e.value;
+				}, e)
+				.then(function(result) {
+					equal(result, "12345", "with element parameters");
+				})
+				.thenCatch(function() {
+					ok(false, "can't execute");
+				});
+		})
+		.thenCatch(function(error) {
+			ok(false, error);
+		});
 	//failure
 	driver.executeScript('hogehoge')
 		.then(function(result) {
@@ -846,10 +885,13 @@ asyncTest("elementByName", function() {
 		.then(function(e) {
 			e.findElement(By.name("name"))
 				.then(function(e) {
-					ok(true, JSON.stringify(e));
+					e.getAttribute("name")
+						.then(function(text) {
+							equal(text, "name");
+						});
 				})
-				.thenCatch(function() {
-					ok(false, "not found");
+				.thenCatch(function(e) {
+					ok(false, "not found:" + e);
 				});
 		})
 		.thenCatch(function() {
@@ -867,10 +909,13 @@ asyncTest("elementsByName", function() {
 		.then(function(e) {
 			e.findElements(By.name("name"))
 				.then(function(e) {
-					ok(true, JSON.stringify(e));
+					e[0].getAttribute("name")
+						.then(function(text) {
+							equal(text, "name");
+						});
 				})
-				.thenCatch(function() {
-					ok(false, "not found");
+				.thenCatch(function(e) {
+					ok(false, "not found:" + e);
 				});
 		})
 		.thenCatch(function() {
