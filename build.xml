@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="Shift_JIS" ?>
+<project name="jsondriver" default="package">
+  <tstamp>
+    <format property="yyyymmdd" pattern="yyyyMMdd" />
+  </tstamp>
+  <property name="zip" value="dist/jsondriver_${yyyymmdd}.zip"/>
+  <target name="package">
+    <delete file="${zip}"/>
+    <zip destfile="${zip}">
+      <fileset dir=".">
+        <include name="lib/*"/>
+        <include name="tests/*.html"/>
+        <include name="jsondriver.js"/>
+        <include name="jsonserver.js"/>
+        <include name="webdriver.js"/>
+        <include name="README.txt"/>
+      </fileset>
+    </zip>
+  </target>
+</project>

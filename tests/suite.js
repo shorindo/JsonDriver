@@ -494,15 +494,21 @@ asyncTest("executeScript", function() {
 	title();
 	driver.get('/tests/input.html');
 	//success
-	driver.executeScript('12 * 34')
-		.then(function(result) {
-			equal(408, result, "12 * 34=" + result);
-		})
-		.thenCatch(function() {
-			ok(false, "can't execute");
-		});
+	driver.executeScript('x = 12 * 34')
+	.then(function(result) {
+		equal(408, result, "12 * 34=" + result);
+	})
+	.thenCatch(function() {
+		ok(false, "can't execute");
+	});
+	driver.executeScript('x')
+	.then(function(result) {
+		equal(408, result, "12 * 34=" + result);
+	})
+	.thenCatch(function() {
+		ok(false, "can't execute");
+	});
 	driver.executeScript(function(a,b,c) {
-		console.log(arguments);
 		return a * b * c;
 	}, 23, 45, 67)
 		.then(function(result) {
