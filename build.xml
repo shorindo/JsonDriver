@@ -3,18 +3,71 @@
   <tstamp>
     <format property="yyyymmdd" pattern="yyyyMMdd" />
   </tstamp>
+  <taskdef name="jsdoctoolkit"
+           classname="uk.co.darrenhurley.ant.tasks.JsDocToolkit"
+           classpath="lib/jsdoc-toolkit-ant-task-1.1.2.jar;lib/js.jar" /> 
   <property name="zip" value="dist/jsondriver_${yyyymmdd}.zip"/>
   <target name="package">
     <delete file="${zip}"/>
     <zip destfile="${zip}">
       <fileset dir=".">
         <include name="lib/*"/>
-        <include name="tests/*.html"/>
+        <include name="tests/*"/>
         <include name="jsondriver.js"/>
         <include name="jsonserver.js"/>
         <include name="webdriver.js"/>
         <include name="README.txt"/>
       </fileset>
     </zip>
+  </target>
+  
+  <target name="jsdoc">
+      <jsdoctoolkit
+          jsdochome="lib/jsdoc-toolkit/"
+          template="jsdoc"
+          outputdir="dist/doc/"
+          includeundocumented="true"
+          includeprivate="true">
+          <fileset dir=".">
+            <include name="jsondriver.js"/>
+            <include name="jsonserver.js"/>
+          </fileset>
+      </jsdoctoolkit>
+  </target>
+  
+  <target name="jsdoc3">
+      <property name="_BASEPATH" value="/Users/kazm/git/jsdoc"/>
+      <!--property name="_BASEPATH" value="/Users/kazm/node_modules/.bin"/-->
+      <exec executable="${_BASEPATH}/jsdoc.cmd">
+          <!-- arg value="- -verbose"/-->
+          <arg value="jsondriver.js"/>
+          <!--arg value="jsonserver.js"/-->
+      </exec>
+      <!-- 
+      <java classpath="lib/js.jar;lib/jsdoc-toolkit/jsrun.jar"
+            classname="org.mozilla.javascript.tools.shell.Main"
+            fork="true">
+          <arg value="-modules"/>
+          <arg value="${_BASEPATH}/lib"/>
+          <arg value="-modules"/>
+          <arg value="${_BASEPATH}/node_modules"/>
+          <arg value="-modules"/>
+          <arg value="${_BASEPATH}/rhino"/>
+          <arg value="-modules"/>
+          <arg value="${_BASEPATH}"/>
+          <arg value="${_BASEPATH}/jsdoc.js"/>
+          <arg value="jsondriver.js"/>
+          <arg value="jsonserver.js"/>
+      </java>
+      --> 
+  </target>
+  
+  <target name="jscover">
+      <java jar="lib/JSCover-all.jar" fork="true">
+          <arg value="-fs"/>
+          <arg value="--local-storage"/>
+          <arg value="src"/>
+          <arg value="dist/instrumented"/>
+      </java>
   </target>
 </project>

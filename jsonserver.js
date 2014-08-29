@@ -1,11 +1,28 @@
 /*
- * 
+ * Copyright (C) 2014 Shorindo, Inc.
+ *      http://shorindo.com
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
+
 var cq = {0:[]};
 var http = require("http");
 var url  = require("url");
 var handlers = [];
 
+/**
+ * ハンドラーを設定する
+ */
 function addHandler(path, handler) {
 	handlers.push({ regexp:new RegExp("^" + path.replace(/\*/g, ".*?") + "$"), handler:handler });
 }
@@ -36,11 +53,21 @@ http.createServer(function (request, response) {
 	console.log("BIND TO '" + this.address().address + "'");
 });
 
+/**
+ * セッションIDを取得する
+ * @function
+ * @param request
+ * @returns
+ */
 function getSessionId(request) {
 	var url  = require('url').parse(request.url);
 	return url.pathname.replace(/^\/session\/(\d+)(\/.*)?$/, "$1");
 }
 
+/**
+ * @param request
+ * @param response
+ */
 function doResource(request, response) {
 	var fs = require('fs');
 	try {
@@ -90,11 +117,19 @@ function doResource(request, response) {
 	}
 }
 
+/**
+ * @param request
+ * @param response
+ */
 function doNotFound(request, response) {
 	response.writeHead(404, {"Content-Type": "text/plain"});
 	response.end("NOT FOUND");
 }
- 
+
+/**
+ * @param request
+ * @param response
+ */
 function doClient(request, response) {
 	var json = "";
 	var sid = getSessionId(request);
@@ -190,6 +225,12 @@ function doTarget(request, response) {
 	}
 }
 
+/**
+ * @constructor
+ * @param rpc
+ * @param response
+ * @returns
+ */
 function Queue(rpc, response) {
 	var self = this;
 	self.id = rpc.id = (new Date()).getTime();

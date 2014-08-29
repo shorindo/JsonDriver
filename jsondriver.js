@@ -1,6 +1,26 @@
+/*
+ * Copyright (C) 2014 Shorindo, Inc.
+ *      http://shorindo.com
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+ 
 (function() {
+'use strict';
 /**
  * 初期化する
+ * @function
+ * @name	init
  */
 var init = function() {
 	var CLASS_NAME = "json.driver.Target";
@@ -39,7 +59,6 @@ var init = function() {
 		'/session/:sessionId/element/:id/attribute/:name'	: doElementAttribute,
 		'/session/:sessionId/element/:id/css/:propertyName'	: doElementCssValue,
 		'/session/:sessionId/element/:id/equals/:other'		: doNotImplement,
-		'/session/:sessionId/window'						: doNotImplement,
 		'/session/:sessionId/window/:windowHandle/maximize'	: doNotImplement,
 		'/session/:sessionId/window/:windowHandle/position'	: doNotImplement,
 		'/session/:sessionId/window/:windowHandle/size'		: doNotImplement,
@@ -87,6 +106,8 @@ var init = function() {
 
 	/**
 	 * JsonServerに接続する
+	 * @function
+	 * @name	connect
 	 */
 	function connect() {
 		var xhr = new XMLHttpRequest();
@@ -109,7 +130,7 @@ var init = function() {
 					setTimeout(connect, 5000);
 				}
 			}
-		}
+		};
 		xhr.onerror = function(err) {
 			console.log("error:" + jsonify(err));
 		};
@@ -120,12 +141,21 @@ var init = function() {
 		xhr.send();
 	}
 	
+	/**
+	 * ログ出力
+	 * @function
+	 * @name	log
+	 */
 	function log(text) {
 		//var line = document.body.appendChild(document.createElement("div"));
 		//line.appendChild(document.createTextNode(text));
 		//console.log(text);
 	}
 	
+	/**
+	 * @function
+	 * @name	jsonify
+	 */
 	function jsonify(o) {
 		var seen=[];
 		var jso = JSON.stringify(o, function(k,v){
@@ -139,6 +169,10 @@ var init = function() {
 		return jso;
 	}
 	
+	/**
+	 * @function
+	 * @name	geometry
+	 */
 	function geometry(e) {
 		var result = { top:e.offsetTop, left:e.offsetLeft, width:e.offsetWidth, height: e.offsetHeight};
 		var parent = e.offsetParent;
@@ -153,16 +187,14 @@ var init = function() {
 	function hilit(e) {
 		var geo = geometry(e);
 		var cover = document.body.appendChild(document.createElement("div"));
-		with (cover.style) {
-			position = "absolute";
-			top = geo.top + "px";
-			left = geo.left + "px";
-			width = geo.width + "px";
-			height = geo.height + "px";
-			background = "yellow";
-			opacity = 0.5;
-			zIndex = 99999999;
-		}
+		cover.style.position = "absolute";
+		cover.style.top = geo.top + "px";
+		cover.style.left = geo.left + "px";
+		cover.style.width = geo.width + "px";
+		cover.style.height = geo.height + "px";
+		cover.style.background = "yellow";
+		cover.style.opacity = 0.5;
+		cover.style.zIndex = 99999999;
 		setTimeout(function() {
 			cover.parentNode.removeChild(cover);
 		}, 1000);
@@ -219,7 +251,7 @@ var init = function() {
 
 	function doCommand(rpc) {
 		for (var i = 0; i < COMMANDS_EXPR.length; i++) {
-			var matches = rpc.path.match(COMMANDS_EXPR[i].regexp)
+			var matches = rpc.path.match(COMMANDS_EXPR[i].regexp);
 			if (matches) {
 				for (var j = 1; j < matches.length; j++) {
 					rpc[COMMANDS_EXPR[i].params[j - 1]] = matches[j];
@@ -242,7 +274,7 @@ var init = function() {
 			browserVersion = RegExp.$1;
 		} else if (agent.match(/.*version\/(\d+\.\d+\.\d+).*safari.*/i)) {
 			browserName = "Safari";
-			browserVersion = RegExp.$1
+			browserVersion = RegExp.$1;
 		} else if (agent.match(/.*opera.*/)) {
 			browserName = "Opera";
 		} else if (agent.match(/.*chrome.*/)) {
@@ -566,7 +598,7 @@ var init = function() {
 	}
 	
 	function doElementByName(rpc, context) {
-		context = context ? context : document
+		context = context ? context : document;
 		var name = rpc.data.value;
 		var elements = document.evaluate("//*[@name='" + name + "']", context, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
 		if (getCommand(rpc) == 'elements') {
@@ -721,7 +753,7 @@ var init = function() {
 	}
 
 	function doElementByXpath(rpc, context) {
-		context = context ? context : document
+		context = context ? context : document;
 		var xpath = rpc.data.value;
 		var snapshot = document.evaluate(xpath, context, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
 		if (getCommand(rpc) == 'elements') {
@@ -1047,6 +1079,9 @@ var init = function() {
 		});
 	}
 
+	/**
+	 * @function
+	 */
 	function doError(rpc, status, value, state) {
 		response({
 			"sessionId":rpc.sessionId,
