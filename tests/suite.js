@@ -1,5 +1,20 @@
-//calling with url parameter wdsid=...
-//QUnit.config.autostart = false;
+/*
+ * Copyright (C) 2014 Shorindo, Inc.
+ *      http://shorindo.com
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 var driver;
 QUnit.config.reorder = false;
 QUnit.begin = function() {
@@ -496,18 +511,25 @@ asyncTest("executeScript", function() {
 	//success
 	driver.executeScript('x = 12 * 34')
 	.then(function(result) {
-		equal(408, result, "12 * 34=" + result);
-	})
-	.thenCatch(function() {
-		ok(false, "can't execute");
-	});
+			equal(408, result, "12 * 34=" + result);
+		})
+		.thenCatch(function() {
+			ok(false, "can't execute");
+		});
+	driver.executeScript('x = 12 * 34;')
+		.then(function(result) {
+			equal(408, result, "12 * 34=" + result);
+		})
+		.thenCatch(function() {
+			ok(false, "can't execute");
+		});
 	driver.executeScript('x')
-	.then(function(result) {
-		equal(408, result, "12 * 34=" + result);
-	})
-	.thenCatch(function() {
-		ok(false, "can't execute");
-	});
+		.then(function(result) {
+			equal(408, result, "12 * 34=" + result);
+		})
+		.thenCatch(function() {
+			ok(false, "can't execute");
+		});
 	driver.executeScript(function(a,b,c) {
 		return a * b * c;
 	}, 23, 45, 67)

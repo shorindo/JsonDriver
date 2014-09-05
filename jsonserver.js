@@ -140,7 +140,7 @@ function doClient(request, response) {
 		});
 		request.on("end", function(evt) {
 			var o = JSON.parse(json);
-			console.log(cq[0].length + ":" + JSON.stringify(o));
+			//console.log(cq[0].length + ":" + JSON.stringify(o));
 			cq[0].push(new Queue(json, response));
 		});
 		break;
@@ -166,7 +166,7 @@ function doTarget(request, response) {
 					"Allow" : "GET, POST, DELETE",
 					"Conetnt-Type" : "application/json"
 				});
-				console.log(q.rpc);
+				//console.log(q.rpc);
 				response.end(q.rpc);
 			}
 		}, 100);
@@ -186,7 +186,7 @@ function doTarget(request, response) {
 					"Allow" : "GET, POST, DELETE",
 					"Conetnt-Type" : "application/json"
 				});
-				console.log(json);
+				//console.log(json);
 				q.response.end(json);
 				response.writeHead(200, {
 					"Access-Control-Allow-Origin" : "*",

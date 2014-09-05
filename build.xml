@@ -11,7 +11,8 @@
     <delete file="${zip}"/>
     <zip destfile="${zip}">
       <fileset dir=".">
-        <include name="lib/*"/>
+        <include name="lib/qunit.*"/>
+        <include name="lib/shell.*"/>
         <include name="tests/*"/>
         <include name="jsondriver.js"/>
         <include name="jsonserver.js"/>

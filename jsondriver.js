@@ -16,7 +16,6 @@
  */
  
 (function() {
-'use strict';
 /**
  * 初期化する
  * @function
@@ -442,8 +441,9 @@ var init = function() {
 
 	function doExecute(rpc) {
 		try {
-			var script = rpc.data.script.match(/^\s*return\s+/) ?
-				rpc.data.script : "return " + rpc.data.script;
+			var script = rpc.data.script
+				.replace(/^\s*return\s+\(([\s\S]*?})\)\.apply\(.*?\);/, "(function() { return $1; })()")
+				.replace(/^\s*return\s+(.*)$/, "(function(){ return function(){return $1;}; })()");
 			var args   = [];
 			for (var i = 0; i < rpc.data.args.length; i++) {
 				if (typeof(rpc.data.args[i]) == 'object')
@@ -451,10 +451,14 @@ var init = function() {
 				else
 					args.push(rpc.data.args[i]);
 			}
+			var result = eval(script);
+			if (typeof(result) == 'function') {
+				result = result.apply(null, args);
+			}
 			response({
 				"sessionId":rpc.sessionId,
 				"status":0,
-				"value":eval("(function(){" + script + "})").apply(window, args),
+				"value":result,
 				"state":"success",
 				"class":CLASS_NAME
 			});
@@ -480,7 +484,7 @@ var init = function() {
 	}
 	
 	function doElementByClass(rpc, context) {
-		context = context ? context : document;
+		context = context || document;
 		var name = rpc.data.value.trim();
 		var xpath = "//*[contains(concat(' ',@class,' '),' " + name + " ')]";
 		var elements = context.evaluate(xpath, context, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
@@ -520,8 +524,9 @@ var init = function() {
 	}
 	
 	function doElementBySelector(rpc, context) {
+		context = context || document;
 		var selector = rpc.data.value;
-		var elements = document.querySelectorAll(selector);
+		var elements = context.querySelectorAll(selector);
 		if (getCommand(rpc) == 'elements') {
 			var results = [];
 			for (var i = 0; i < elements.length; i++) {
@@ -559,7 +564,7 @@ var init = function() {
 	
 	function doElementById(rpc, context) {
 		//console.log("doElementById(" + JSON.stringify(rpc) + ")");
-		context = context ? context : document;
+		context = context || document;
 		var id = rpc.data.value;
 		var elements = document.evaluate("//*[@id='" + id + "']", context, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
 		if (getCommand(rpc) == "elements") {
@@ -598,7 +603,7 @@ var init = function() {
 	}
 	
 	function doElementByName(rpc, context) {
-		context = context ? context : document;
+		context = context || document;
 		var name = rpc.data.value;
 		var elements = document.evaluate("//*[@name='" + name + "']", context, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
 		if (getCommand(rpc) == 'elements') {
@@ -637,7 +642,7 @@ var init = function() {
 	}
 	
 	function doElementByLinkText(rpc, context) {
-		context = context ? context : document;
+		context = context || document;
 		var text = rpc.data.value;
 		var snapshot = document.evaluate("//a[text()='" + text + "']", context, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
 		if (getCommand(rpc) == 'elements') {
@@ -677,7 +682,7 @@ var init = function() {
 	}
 
 	function doElementByPartialLinkText(rpc, context) {
-		context = context ? context : document;
+		context = context || document;
 		var text = rpc.data.value;
 		var result = {
 			"sessionId":rpc.sessionId,
@@ -714,7 +719,7 @@ var init = function() {
 	}
 
 	function doElementByTagName(rpc, context) {
-		context = context ? context : document;
+		context = context || document;
 		var tagName = rpc.data.value;
 		var elements = document.evaluate("//" + tagName, context, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null); 
 		if (getCommand(rpc) == 'elements') {
@@ -753,7 +758,7 @@ var init = function() {
 	}
 
 	function doElementByXpath(rpc, context) {
-		context = context ? context : document;
+		context = context || document;
 		var xpath = rpc.data.value;
 		var snapshot = document.evaluate(xpath, context, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
 		if (getCommand(rpc) == 'elements') {
