@@ -568,6 +568,24 @@ asyncTest("executeScript", function() {
 		});
 });
 
+asyncTest("executeAsyncScript", function() {
+	title();
+	driver.get('/tests/input.html');
+	driver.executeAsyncScript(
+		function() {
+			var callback = arguments[arguments.length - 1];
+			var time = (new Date()).getTime();
+			setTimeout(function() { callback((new Date()).getTime() - time, "now"); }, 3000);
+		}
+	).then(function(result) {
+		ok(2990 <= result && result <= 3010, result);
+	});
+	driver.sleep(0)
+		.then(function() {
+			start();
+		});
+});
+
 asyncTest("getPageSource", function() {
 	title();
 	driver.get('/tests/input.html');
@@ -699,20 +717,61 @@ asyncTest("click", function() {
 asyncTest("sendKeys", function() {
 	title();
 	driver.get('/tests/input.html');
-	driver.findElement(By.name('name')).sendKeys("Mike")
+	driver.findElement(By.name('name'))
+		.sendKeys("Mike")
+		.then(function(v) {
+			equal(v, 'Mike', "sendkeys");
+		})
+		.thenCatch(function() {
+			ok(false, "not found");
+		});
+	driver.findElement(By.name('name'))
+		.then(function(e) {
+			driver.executeScript(
+				function(e) {
+					return e.value;
+				}, e)
+				.then(function(result) {
+					equal(result, 'Mike');
+				});
+		});
+	driver.findElement(By.name('age'))
+		.sendKeys("50")
 		.then(function() {
 			ok(true, "sendkeys");
 		})
 		.thenCatch(function() {
 			ok(false, "not found");
 		});
-	driver.findElement(By.name('age')).sendKeys("50")
+	driver.findElement(By.name('age'))
+		.then(function(e) {
+			driver.executeScript(
+				function(e) {
+					return e.value;
+				}, e)
+				.then(function(result) {
+					equal(result, '50');
+				});
+		});
+	driver.findElement(By.name('comment'))
+		.sendKeys("はじめまして\nこんにちわ")
 		.then(function() {
 			ok(true, "sendkeys");
 		})
 		.thenCatch(function() {
 			ok(false, "not found");
-		})
+		});
+	driver.findElement(By.name('comment'))
+		.then(function(e) {
+			driver.executeScript(
+				function(e) {
+					return e.value;
+				}, e)
+				.then(function(result) {
+					equal(result, 'はじめまして\nこんにちわ');
+				});
+		});
+	driver.sleep(0)
 		.thenFinally(function() {
 			start();
 		});

@@ -66,7 +66,7 @@ var init = function() {
 		'/session/:sessionId/source'						: doSource,
 		'/session/:sessionId/title'							: doTitle,
 		'/session/:sessionId/execute'						: doExecute,
-		'/session/:sessionId/execute_async'					: doNotImplement,
+		'/session/:sessionId/execute_async'					: doExecuteAsync,
 		'/session/:sessionId/screenshot'					: doNotImplement,
 		'/session/:sessionId/ime/available_engines'			: doNotImplement,
 		'/session/:sessionId/ime/active_engine'				: doNotImplement,
@@ -115,9 +115,9 @@ var init = function() {
 				if (xhr.status == 200) { // OK
 					log(">>" + xhr.responseText);
 					var rpc = JSON.parse(xhr.responseText);
+					rpc.callback = connect;
 					try {
 						doCommand(rpc);
-						connect();
 					} catch(e) {
 						log("[E]" + jsonify(xhr));
 						//doError(rpc, 9, e.toString(), 'UnknownError');
@@ -303,7 +303,8 @@ var init = function() {
 			},
 			"state":null,
 			"class":CLASS_NAME
-		});
+         });
+         rpc.callback();
 	}
 	
 	function doUrl(rpc) {
@@ -326,9 +327,10 @@ var init = function() {
 				location = rpc.data.url;
 			});
 		}
+		rpc.callback();
 	}
 	
-	function doTitle(rpc) {
+	function doTitle(rpc, fn) {
 		response({
 			"sessionId":rpc.sessionId,
 			"status":0,
@@ -336,6 +338,7 @@ var init = function() {
 			"state":"success",
 			"class":CLASS_NAME
 		});
+		rpc.callback();
 	}
 
 	function doElement(rpc, context) {
@@ -371,6 +374,7 @@ var init = function() {
 		} catch (err) {
 			doError(rpc, 32, err.toString(), 'InvalidSelector');
 		}
+		rpc.callback();
 	}
 
 	function doBack(rpc) {
@@ -393,6 +397,7 @@ var init = function() {
 				"class":CLASS_NAME
 			});
 		}
+		rpc.callback();
 	}
 
 	function doForward(rpc) {
@@ -415,6 +420,7 @@ var init = function() {
 				"class":CLASS_NAME
 			});
 		}
+		rpc.callback();
 	}
 
 	function doRefresh(rpc) {
@@ -437,6 +443,7 @@ var init = function() {
 				"class":CLASS_NAME
 			});
 		}
+		rpc.callback();
 	}
 
 	function doExecute(rpc) {
@@ -446,10 +453,13 @@ var init = function() {
 				.replace(/^\s*return\s+(.*)$/, "(function(){ return function(){return $1;}; })()");
 			var args   = [];
 			for (var i = 0; i < rpc.data.args.length; i++) {
-				if (typeof(rpc.data.args[i]) == 'object')
+				if (rpc.data.args[i] === null) {
+					continue;
+				} else if (typeof(rpc.data.args[i]) == 'object') {
 					args.push(founds[rpc.data.args[i].ELEMENT]);
-				else
+				} else {
 					args.push(rpc.data.args[i]);
+				}
 			}
 			var result = eval(script);
 			if (typeof(result) == 'function') {
@@ -471,6 +481,51 @@ var init = function() {
 				"class":CLASS_NAME
 			});
 		}
+		rpc.callback();
+	}
+
+    function doExecuteAsync(rpc) {
+        try {
+            var script = rpc.data.script
+                .replace(/^\s*return\s+\(([\s\S]*?})\)\.apply\(.*?\);/, "(function() { return $1; })()")
+				.replace(/^\s*return\s+(.*)$/, "(function(){ return function(){return $1;}; })()");
+			var args   = [];
+			for (var i = 0; i < rpc.data.args.length; i++) {
+				if (rpc.data.args[i] === null) {
+                    continue;
+                } else if (typeof(rpc.data.args[i]) == 'object') {
+					args.push(founds[rpc.data.args[i].ELEMENT]);
+				} else {
+					args.push(rpc.data.args[i]);
+				}
+			}
+			args.push(function() {
+				response({
+					"sessionId":rpc.sessionId,
+					"status":0,
+					"value":arguments[0],
+					"state":"success",
+					"class":CLASS_NAME
+				});
+				rpc.callback();
+			});
+			var fn = eval(script);
+			if (typeof(fn) == 'function') {
+				fn.apply(null, args);
+				return true; //do async
+			} else {
+			    rpc.callback();
+			}
+		} catch (error) {
+			response({
+				"sessionId":rpc.sessionId,
+				"status":17,
+				"value":error.toString(),
+				"state":"JavaScriptError",
+				"class":CLASS_NAME
+			});
+			rpc.callback();
+		}
 	}
 	
 	function doSource(rpc) {
@@ -481,6 +536,7 @@ var init = function() {
 			"state":"success",
 			"class":CLASS_NAME
 		});
+		rpc.callback();
 	}
 	
 	function doElementByClass(rpc, context) {
@@ -825,11 +881,15 @@ var init = function() {
 				"class":CLASS_NAME
 			});
 		}
+		rpc.callback();
 	}
 
 	function doElementValue(rpc) {
 		var element = founds[getElementId(rpc)];
 		if (element) {
+			if (rpc.method == 'POST') {
+				element.value = rpc.data.value;
+			}
 			response({
 				"sessionId":rpc.sessionId,
 				"status":0,
@@ -846,6 +906,7 @@ var init = function() {
 				"class":CLASS_NAME
 			});
 		}
+		rpc.callback();
 	}
 	
 	function doElementText(rpc) {
@@ -867,7 +928,7 @@ var init = function() {
 				"class":CLASS_NAME
 			});
 		}
-		if (element) element.value = rpc.data.value;
+		rpc.callback();
 	}
 	
 	function doElementName(rpc) {
@@ -889,6 +950,7 @@ var init = function() {
 				"class":CLASS_NAME
 			});
 		}
+		rpc.callback();
 	}
 	
 	function doElementCssValue(rpc) {
@@ -911,6 +973,7 @@ var init = function() {
 			};
 		}
 		response(result);
+		rpc.callback();
 	}
 	
 	function doElementAttribute(rpc) {
@@ -932,6 +995,7 @@ var init = function() {
 				"class":CLASS_NAME
 			});
 		}
+		rpc.callback();
 	}
 	
 	function doElementDisplayed(rpc) {
@@ -956,6 +1020,7 @@ var init = function() {
 				"class":CLASS_NAME
 			});
 		}
+		rpc.callback();
 	}
 	
 	function doElementSelected(rpc) {
@@ -977,6 +1042,7 @@ var init = function() {
 				"class":CLASS_NAME
 			});
 		}
+		rpc.callback();
 	}
 	
 	function doElementExecute(rpc) {
@@ -990,6 +1056,7 @@ var init = function() {
 			"state":"success",
 			"class":CLASS_NAME
 		});
+		rpc.callback();
 	}
 	
 	function doElementElement(rpc) {
@@ -1005,6 +1072,7 @@ var init = function() {
 				"class":CLASS_NAME
 			});
 		}
+		rpc.callback();
 	}
 	
 	function doCookie(rpc) {
@@ -1062,6 +1130,7 @@ var init = function() {
 		default:
 		}
 		response(resp);
+		rpc.callback();
 	}
 	
 	function doNotImplement(rpc) {
@@ -1072,6 +1141,7 @@ var init = function() {
 			"state":"not implemented",
 			"class":CLASS_NAME
 		});
+		rpc.callback();
 	}
 	
 	function doUnknown(rpc) {
@@ -1082,6 +1152,7 @@ var init = function() {
 			"state":"unknown",
 			"class":CLASS_NAME
 		});
+		rpc.callback();
 	}
 
 	/**
@@ -1095,6 +1166,7 @@ var init = function() {
 			"state":state,
 			"class":CLASS_NAME
 		});
+		rpc.callback();
 	}
 	
 	connect();
