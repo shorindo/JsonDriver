@@ -115,7 +115,7 @@ var init = function() {
 				if (xhr.status == 200) { // OK
 					log(">>" + xhr.responseText);
 					var rpc = JSON.parse(xhr.responseText);
-					rpc.callback = connect;
+					rpc.onFinish = connect;
 					try {
 						doCommand(rpc);
 					} catch(e) {
@@ -304,7 +304,7 @@ var init = function() {
 			"state":null,
 			"class":CLASS_NAME
          });
-         rpc.callback();
+         rpc.onFinish();
 	}
 	
 	function doUrl(rpc) {
@@ -327,7 +327,7 @@ var init = function() {
 				location = rpc.data.url;
 			});
 		}
-		rpc.callback();
+		rpc.onFinish();
 	}
 	
 	function doTitle(rpc, fn) {
@@ -338,7 +338,7 @@ var init = function() {
 			"state":"success",
 			"class":CLASS_NAME
 		});
-		rpc.callback();
+		rpc.onFinish();
 	}
 
 	function doElement(rpc, context) {
@@ -374,7 +374,7 @@ var init = function() {
 		} catch (err) {
 			doError(rpc, 32, err.toString(), 'InvalidSelector');
 		}
-		rpc.callback();
+		rpc.onFinish();
 	}
 
 	function doBack(rpc) {
@@ -397,7 +397,7 @@ var init = function() {
 				"class":CLASS_NAME
 			});
 		}
-		rpc.callback();
+		rpc.onFinish();
 	}
 
 	function doForward(rpc) {
@@ -420,7 +420,7 @@ var init = function() {
 				"class":CLASS_NAME
 			});
 		}
-		rpc.callback();
+		rpc.onFinish();
 	}
 
 	function doRefresh(rpc) {
@@ -443,7 +443,7 @@ var init = function() {
 				"class":CLASS_NAME
 			});
 		}
-		rpc.callback();
+		rpc.onFinish();
 	}
 
 	function doExecute(rpc) {
@@ -481,7 +481,7 @@ var init = function() {
 				"class":CLASS_NAME
 			});
 		}
-		rpc.callback();
+		rpc.onFinish();
 	}
 
     function doExecuteAsync(rpc) {
@@ -507,14 +507,13 @@ var init = function() {
 					"state":"success",
 					"class":CLASS_NAME
 				});
-				rpc.callback();
+				rpc.onFinish();
 			});
 			var fn = eval(script);
 			if (typeof(fn) == 'function') {
 				fn.apply(null, args);
-				return true; //do async
 			} else {
-			    rpc.callback();
+			    rpc.onFinish();
 			}
 		} catch (error) {
 			response({
@@ -524,7 +523,7 @@ var init = function() {
 				"state":"JavaScriptError",
 				"class":CLASS_NAME
 			});
-			rpc.callback();
+			rpc.onFinish();
 		}
 	}
 	
@@ -536,7 +535,7 @@ var init = function() {
 			"state":"success",
 			"class":CLASS_NAME
 		});
-		rpc.callback();
+		rpc.onFinish();
 	}
 	
 	function doElementByClass(rpc, context) {
@@ -881,7 +880,7 @@ var init = function() {
 				"class":CLASS_NAME
 			});
 		}
-		rpc.callback();
+		rpc.onFinish();
 	}
 
 	function doElementValue(rpc) {
@@ -906,7 +905,7 @@ var init = function() {
 				"class":CLASS_NAME
 			});
 		}
-		rpc.callback();
+		rpc.onFinish();
 	}
 	
 	function doElementText(rpc) {
@@ -928,7 +927,7 @@ var init = function() {
 				"class":CLASS_NAME
 			});
 		}
-		rpc.callback();
+		rpc.onFinish();
 	}
 	
 	function doElementName(rpc) {
@@ -950,7 +949,7 @@ var init = function() {
 				"class":CLASS_NAME
 			});
 		}
-		rpc.callback();
+		rpc.onFinish();
 	}
 	
 	function doElementCssValue(rpc) {
@@ -973,7 +972,7 @@ var init = function() {
 			};
 		}
 		response(result);
-		rpc.callback();
+		rpc.onFinish();
 	}
 	
 	function doElementAttribute(rpc) {
@@ -995,7 +994,7 @@ var init = function() {
 				"class":CLASS_NAME
 			});
 		}
-		rpc.callback();
+		rpc.onFinish();
 	}
 	
 	function doElementDisplayed(rpc) {
@@ -1020,7 +1019,7 @@ var init = function() {
 				"class":CLASS_NAME
 			});
 		}
-		rpc.callback();
+		rpc.onFinish();
 	}
 	
 	function doElementSelected(rpc) {
@@ -1042,7 +1041,7 @@ var init = function() {
 				"class":CLASS_NAME
 			});
 		}
-		rpc.callback();
+		rpc.onFinish();
 	}
 	
 	function doElementExecute(rpc) {
@@ -1056,7 +1055,7 @@ var init = function() {
 			"state":"success",
 			"class":CLASS_NAME
 		});
-		rpc.callback();
+		rpc.onFinish();
 	}
 	
 	function doElementElement(rpc) {
@@ -1072,7 +1071,7 @@ var init = function() {
 				"class":CLASS_NAME
 			});
 		}
-		rpc.callback();
+		rpc.onFinish();
 	}
 	
 	function doCookie(rpc) {
@@ -1130,7 +1129,7 @@ var init = function() {
 		default:
 		}
 		response(resp);
-		rpc.callback();
+		rpc.onFinish();
 	}
 	
 	function doNotImplement(rpc) {
@@ -1141,7 +1140,7 @@ var init = function() {
 			"state":"not implemented",
 			"class":CLASS_NAME
 		});
-		rpc.callback();
+		rpc.onFinish();
 	}
 	
 	function doUnknown(rpc) {
@@ -1152,7 +1151,7 @@ var init = function() {
 			"state":"unknown",
 			"class":CLASS_NAME
 		});
-		rpc.callback();
+		rpc.onFinish();
 	}
 
 	/**
@@ -1166,7 +1165,7 @@ var init = function() {
 			"state":state,
 			"class":CLASS_NAME
 		});
-		rpc.callback();
+		rpc.onFinish();
 	}
 	
 	connect();
