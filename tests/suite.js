@@ -152,15 +152,18 @@ asyncTest('path parser', function() {
  * takeScreenshot, wait
  */
 module('WebDriver');
+function next() {
+    driver.sleep(0)
+        .then(function() { start(); });
+}
+
 asyncTest('getCurrentUrl', function() {
 	driver.getCurrentUrl()
 		.then(function(url) {
 			path = url.replace(/^https?:\/\/[^\/]+(\/.*)$/, "$1");
 			equal(path, "/tests/input.html", "URL:" + url);
-		})
-		.thenFinally(function() {
-			start();
 		});
+	next();
 });
 
 asyncTest('get', function(){
@@ -184,10 +187,8 @@ asyncTest('get', function(){
 	}, 1000)
 	.thenCatch(function() {
 		ok(false, "not found");
-	})
-	.thenFinally(function() {
-		start();
 	});
+	next();
 });
 
 asyncTest("findElementByClass", function() {
@@ -203,10 +204,8 @@ asyncTest("findElementByClass", function() {
 		})
 		.thenCatch(function() {
 			ok(true, "not found");
-		})
-		.thenFinally(function() {
-			start();
 		});
+	next();
 });
 
 asyncTest("findElementsByClass", function() {
@@ -215,14 +214,24 @@ asyncTest("findElementsByClass", function() {
 	driver.findElements(By.className('title'))
 		.then(function(elements) {
 			equal(elements.length, 1, 'title found');
+			elements[0].getText()
+			    .then(function(text) {
+			        equal(text, 'Input address');
+			    });
 		});
+	driver.findElements(By.id('navi'))
+        .then(function(elements) {
+            elements[0].findElement(By.className('link'))
+                .getText()
+                .then(function(text) {
+                    equal(text, 'list');
+                });
+        });
 	driver.findElements(By.className('titlex'))
 		.then(function(elements) {
 			equal(elements.length, 0, 'titlex not found')
-		})
-		.thenFinally(function() {
-			start();
 		});
+    next();
 });
 
 asyncTest("findElementByCssSelector", function() {
@@ -245,12 +254,12 @@ asyncTest("findElementByCssSelector", function() {
 });
 
 asyncTest("findElementsByCssSelector", function() {
-	title();
-	driver.get('/tests/input.html');
-	driver.findElements(By.css('.title'))
-		.then(function(elements) {
-			equal(elements.length, 1, "found");
-		});
+    title();
+    driver.get('/tests/input.html');
+    driver.findElements(By.css('.title'))
+        .then(function(elements) {
+            equal(elements.length, 1, "found");
+        });
 	driver.findElements(By.css('.titlex'))
 		.then(function(elements) {
 			equal(elements.length, 0, "found");
@@ -262,6 +271,26 @@ asyncTest("findElementsByCssSelector", function() {
 			start();
 		});
 });
+
+/*
+asyncTest('findElementsByCssSelector:many', function() {
+    title();
+    driver.get('/tests/list.html');
+    driver.findElements(By.css('.address'))
+        .then(function(elements) {
+            ok(elements.length > 10, "found:" + elements.length);
+        });
+    driver.findElement(By.css('title'))
+        .getText()
+        .then(function(text) {
+            equal("list", text, text);
+        });
+    driver.sleep(0)
+        .then(function() {
+            start();
+        });
+});
+*/
 
 asyncTest("findElementById", function() {
 	title();
@@ -983,18 +1012,16 @@ asyncTest("elementByName", function() {
 		})
 		.thenCatch(function() {
 			ok(false, "not found");
-		})
-		.thenFinally(function() {
-			start();
 		});
+	next();
 })
 
 asyncTest("elementsByName", function() {
 	title();
 	driver.get('/tests/input.html');
-	driver.findElement(By.id('form1'))
+	driver.findElements(By.id('form1'))
 		.then(function(e) {
-			e.findElements(By.name("name"))
+			e[0].findElements(By.name("name"))
 				.then(function(e) {
 					e[0].getAttribute("name")
 						.then(function(text) {
@@ -1007,10 +1034,8 @@ asyncTest("elementsByName", function() {
 		})
 		.thenCatch(function() {
 			ok(false, "not found");
-		})
-		.thenFinally(function() {
-			start();
 		});
+	next();
 })
 
 asyncTest("getOuterHtml", function() {

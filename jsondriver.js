@@ -200,6 +200,7 @@ var init = function() {
 	}
 	
 	function response(obj, callback) {
+	    //console.log("response:" + JSON.stringify(obj));
 		var result = jsonify(obj);
 		var xhr = new XMLHttpRequest();
 		if (typeof(callback) == 'function') {
@@ -374,7 +375,7 @@ var init = function() {
 		} catch (err) {
 			doError(rpc, 32, err.toString(), 'InvalidSelector');
 		}
-		rpc.onFinish();
+		
 	}
 
 	function doBack(rpc) {
@@ -542,7 +543,7 @@ var init = function() {
 		context = context || document;
 		var name = rpc.data.value.trim();
 		var xpath = "//*[contains(concat(' ',@class,' '),' " + name + " ')]";
-		var elements = context.evaluate(xpath, context, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
+		var elements = document.evaluate(xpath, context, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
 		if (getCommand(rpc) == 'elements') {
 			var results = [];
 			for (var i = 0; i < elements.snapshotLength; i++) {
@@ -576,6 +577,7 @@ var init = function() {
 				"class":CLASS_NAME
 			});
 		}
+        rpc.onFinish();
 	}
 	
 	function doElementBySelector(rpc, context) {
@@ -615,6 +617,7 @@ var init = function() {
 				"class":CLASS_NAME
 			});
 		}
+        rpc.onFinish();
 	}
 	
 	function doElementById(rpc, context) {
@@ -655,6 +658,7 @@ var init = function() {
 				"class":CLASS_NAME
 			});
 		}
+        rpc.onFinish();
 	}
 	
 	function doElementByName(rpc, context) {
@@ -694,6 +698,7 @@ var init = function() {
 				"class":CLASS_NAME
 			});
 		}
+        rpc.onFinish();
 	}
 	
 	function doElementByLinkText(rpc, context) {
@@ -734,6 +739,7 @@ var init = function() {
 				"class":CLASS_NAME
 			});
 		}
+        rpc.onFinish();
 	}
 
 	function doElementByPartialLinkText(rpc, context) {
@@ -771,6 +777,7 @@ var init = function() {
 		xhr.setRequestHeader('Content-Type', 'application/json');
 		xhr.send(jsonify(result));
 		log("<<" + result);
+        rpc.onFinish();
 	}
 
 	function doElementByTagName(rpc, context) {
@@ -810,6 +817,7 @@ var init = function() {
 				"class":CLASS_NAME
 			});
 		}
+        rpc.onFinish();
 	}
 
 	function doElementByXpath(rpc, context) {
@@ -849,6 +857,7 @@ var init = function() {
 				"class":CLASS_NAME
 			});
 		}
+        rpc.onFinish();
 	}
 
 	function doElementClick(rpc) {
